@@ -1,0 +1,226 @@
+function dispW(layerid)
+{
+  gbi(layerid).style.display="block";
+}
+function dispHW(layerid)
+{
+  gbi(layerid).style.display="none";
+}
+
+function gbi(layerid)
+{
+  return document.getElementById(layerid);
+}
+
+var count=0;
+var get1Div=0;
+var posMove=0;
+var countI=0;
+var getDiv='';
+var contWid=0;
+
+function moveLR()
+{ 
+  contWid=(gbi('slideThumbs').offsetWidth);
+  getDiv=gbi('botNav').getElementsByTagName('div');
+  if(count<getDiv.length && count<getDiv.length-1)
+  {gbi('ltMoveID').className='ltMove';
+  get1Div=get1Div + contWid;//Math.round(getW/getDiv.length);
+  move1();
+  var countInc=count+1;
+  //moveLRpag1(gbi("l"+countInc), countInc);
+  count=count+1;
+  if(count>=getDiv.length-1)
+  {gbi('rtMoveID').className='rtMove1';}
+  }
+}
+
+function move1()
+{
+  //alert(getDiv.length);
+  try{
+  if((countI-(contWid/32))<get1Div)
+  {
+    //console.warn("posMove" +  posMove );
+    posMove=-countI;
+    gbi('botNav').style.left=posMove+2+ "px";
+    setTimeout(move1, 10);
+    countI=Math.round(countI+(contWid/32));
+  }
+  }
+  catch(e)
+  {
+    alert(e);
+  }
+}
+
+function moveLR1()
+{
+  contWid=(gbi('slideThumbs').offsetWidth);
+  getDiv=gbi('botNav').getElementsByTagName('div');
+
+  if(count<getDiv.length && count>0)
+  {
+    gbi('rtMoveID').className='rtMove'
+    get1Div=get1Div - contWid;//Math.round(getW/getDiv.length);
+    move2();
+    var countInc=count-1;
+    //moveLRpag1(gbi("l"+countInc), countInc);
+    count=count-1;
+    if(count<=0){
+    gbi('ltMoveID').className='ltMove1';
+    }
+  }
+
+}
+function move2()
+{
+//alert(getDiv.length);
+  try{
+  if((countI+(contWid/32))>get1Div)
+  { 
+    posMove=-countI;
+    gbi('botNav').style.left=posMove + "px";
+    setTimeout(move2, 10);
+    countI=Math.round(countI-(contWid/32));
+  }
+  }
+  catch(e)
+  {
+    alert(e);
+  }
+}
+
+
+function defaultSelect()
+{
+  gbi("smpic1").className = 'bgCol';
+}
+function moveLRpag1(id, srcPath, caption, len, iter)
+{
+    var i=1;
+    while(i<=len)
+    {
+      if(gbi("smpic"+i))      
+        gbi("smpic"+i).className='';
+      i=i+1;
+    }
+    gbi("smpic"+iter).className = 'bgCol';
+    //getElementsByTagName
+    var imgSource = srcPath+id+'/seq/1';
+    var imgCaption =caption ;
+    //alert(imgCaption);
+    var mainSlideImage = document.getElementById('slideImage');
+    mainSlideImage.src = imgSource;
+    mainSlideImage.title = imgCaption;
+    var mainSlideCaption = document.getElementById('jdCaption');
+    mainSlideCaption.innerHTML = imgCaption;
+}
+
+/*change bg of selected box*/
+function changeBG(objN, obj, classO, classN)
+{ var j=1;
+  var chkType=gbi(objN).getElementsByTagName('INPUT');
+  if(chkType[0].type=='radio')
+  {
+    while(gbi(obj+j))
+    {gbi(obj+j).className=classO;
+      j=j+1;
+    }
+  }
+  if(chkType[0].checked)
+  gbi(objN).className=classN;
+  else
+  gbi(objN).className=classO;
+}
+function shHide(layerInit, objno, oClass, nClass)
+{
+  var i=1;
+  while(gbi(layerInit+i))
+  {
+    gbi(layerInit+i).className=oClass;
+    i=i+1
+  }
+  gbi(layerInit+objno).className=nClass;
+}
+
+
+function shpmode(layerInitO, layerInitN)
+{
+  var i=1;
+  while(gbi(layerInitO+i))
+  {
+    gbi(layerInitO+i).className='dspN';
+    gbi(layerInitN+i).className='dspB';
+    i=i+1;
+  }
+}
+function fetchMedia(url,id)
+{
+  var randomnumber=Math.floor(Math.random()*1000);
+  url=url+"&rnum="+randomnumber;
+  var http_request = false;
+  if (window.XMLHttpRequest) { // For Mozilla and other browsers
+    http_request = new XMLHttpRequest();
+    if (http_request.overrideMimeType) {
+      http_request.overrideMimeType('text/xml');
+    }
+  }
+  else if (window.ActiveXObject) { // For Internet Explorer
+  try {
+  http_request = new ActiveXObject("Msxml2.XMLHTTP");
+  } catch (e) {
+  try {
+    http_request = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  catch (e) {}
+  }
+  }
+  if (!http_request) {
+    alert('Giving up :( Cannot create an XMLHTTP instance');
+    return false;
+  }
+
+
+  http_request.onreadystatechange = function () { readystatechangemedia(http_request,id); };
+  http_request.open("GET",url,true);
+  http_request.send(null);
+  return true;
+}
+function readystatechangemedia(http_request,id)
+{
+  if (http_request.readyState == 4)
+  {
+    try
+    {
+      if (http_request.status == 200)
+      {
+        var response='';
+        response=http_request.responseText;
+        if(response)
+        {
+          var arrayContent=response.split("|XXXXZZZZ|");
+          gbi('loader').style.display='none';
+          gbi(id).style.display='block';
+          gbi('botNav').innerHTML = arrayContent[0];
+          gbi('moveDiv').innerHTML = arrayContent[1];
+          gbi('contDivM0').style.display="block";
+          gbi('l0').className="bgCol";
+        }
+        else
+        {
+          gbi('loader').className='';
+          gbi('loader').style.innerHTML='&nbsp;NO IMAGES FOR THIS COMPANY';
+        }
+      }
+      else if (http_request.status != 0)
+      {
+        alert("There was an error while retrieving the URL: " + http_request.statusText);
+      }
+    }
+    catch (error){ alert(error);}
+    }
+    return true;
+}
+
+

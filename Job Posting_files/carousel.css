@@ -1,0 +1,42 @@
+.lf{float:left}
+.rf{float:right}
+.cls{clear:both;}
+
+/*resume services*/
+.rs_cont1{position:relative;}
+.ltMove, .rtMove, .ltMove1, .rtMove1{background:url(../images/carousel.png) 0 0 no-repeat;float:left; width:11px; height:20px; cursor:pointer; margin:15px 0 0; position:relative;}
+.rtMove, .rtMove1{background-position:-22px 0; right:-2px; width:11px; display:block;}
+*:first-child+html .rtMove, *:first-child+html .rtMove1 { padding:0 5px; }
+.ltMove1{background-position:-40px 0; margin-right:9px;cursor:default;}
+.ltMove{left:0; margin-right:9px;}
+.rtMove1{background-position:-69px 0;cursor:default}
+.midMove{position:relative}
+.midMove1{}
+.midMove .contDivM{float:left; color:#474747; position:relative; height:225px;}
+.midMove .img1{border:1px solid #5f5f5f; float:left; margin-right:5px;}
+
+.w120{height:230px; width:120px;}
+.w367{width:433px;}
+.w230{height:246px; width:230px;}
+.w120p{height:240px; width:120px;}
+.w367p{height:270px; width:433px;}
+.w230p{height:256px; width:230px;}
+.h10{height:10px; font-size:10px; text-align:center;}
+.h310{height:310px;}
+.botNum{height:32px; width:390px; display:block; margin:5px 0 0; position:absolute; width:2000em;}
+.botNum img{border:#aaacac solid 1px;}
+.botNum .thumbContainer{ width:52px; float:left; padding:0 15px 0 0;font-size:11px;overflow:hidden}
+.botNum a{font-size:11px; text-decoration:none; color:#000;}
+.botNum a .imageHolder{background:#e1e1e1; display:block; width:46px;padding:3px; margin:0 0 3px; cursor:pointer;}
+.bgCol:link span.imageHolder, .bgCol:visited span.imageHolder, .bgCol:active span.imageHolder{background:#fcb813; outline:none;}
+
+
+.wid2{position:absolute;  bottom:10px; width:100%; height:30px;left:0;}
+.wid1{position:absolute; bottom:10px;}
+.cCont{height:80px; width:389px; float:left; display:block; overflow:hidden; position:relative; margin:0 9px 0 0;}
+.wid3{position:absolute; bottom:0;width:100%;}
+.pagDiv{position:absolute;height:10px; top:310px; width:440px}
+.w200{width:159px; margin:0 auto;}
+
+.contDivM img{border:#b0afaf solid 1px;}
+.jdImageCaption{ display:block; background:#000; color:#fff; font-size:12px; bottom:0; left:1px;position:absolute; width:421px; padding:7px 0 7px 8px; filter: alpha(opacity=80);filter: progid:DXImageTransform.Microsoft.Alpha(opacity=80);-moz-opacity: .8;-khtml-opacity: .8;opacity: .8;}

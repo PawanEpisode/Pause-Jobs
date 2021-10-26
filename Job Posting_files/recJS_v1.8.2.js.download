@@ -1,0 +1,734 @@
+
+var gHei=0;var layid1='';var ceID1='';var layid='';var layid2='';var wid2='';var ceID2='';var nHei=0;var spacer='<img src=\"http://static.naukimg.com/rstatic/images/spacer.gif\" alt=\"\" height=\"1\" width=\"1\" border=\"0\" \/>';var bool=false;
+function modalwin(wid1, hei1, layid, ceID)
+{if(ceID){layid2=layid;ceID2=ceID;}else{layid2=hei1;ceID2=layid;}wid2=wid1;if(!(gbi('modal2'))){var mod1=crtDiv();mod1.id="modal2";mod1.className="mod1 modC";mod1.style.display="none";var frm1=crtDiv();frm1.id="frmLy";frm1.className="frm";frm1.style.display="none";frm1.innerHTML='<iframe id="lFr1" style="border: none;"></iframe>';ddBd().appendChild(mod1);ddBd().appendChild(frm1);}var modal2=gbi('modal2');var iebody=(document.compatMode && document.compatMode != "BackCompat")? document.documentElement : ddBd();var dsocleft=document.all? iebody.scrollLeft : pageXOffset;var dsoctop=document.all? iebody.scrollTop : pageYOffset;var getnHei=ddBd().offsetHeight;var getNWid=altS();if(navigator.appName!='Microsoft Internet Explorer'){getnHei=getnHei+16;}modal2.style.top=0;modal2.style.width=getNWid+'px';if(getnHei<nHei){getnHei=nHei;}modal2.style.height=getnHei+'px';modal2.style.background='#000';if(layid2=="blkRes"){  var clName = layid.className; var el = gbi(layid2);  if(clName.indexOf("manDup") > -1){ el.childNodes[3].childNodes[1] ? el.childNodes[3].childNodes[1].innerHTML = "Block duplicate Responses across all eApps Jobs" : el.childNodes[2].childNodes[1].innerHTML = "Block duplicate Responses across all eApps Jobs";  el.childNodes[3].childNodes[1] ? el.childNodes[3].childNodes[1].id = "manDup" : el.childNodes[2].childNodes[1].id = "manDup";  }  else{  el.childNodes[3].childNodes[1] ? el.childNodes[3].childNodes[1].innerHTML = "Block/Unblock Responses" : el.childNodes[2].childNodes[1].innerHTML = "Block/Unblock Responses"; el.childNodes[3].childNodes[1] ? el.childNodes[3].childNodes[1].id = "" : el.childNodes[2].childNodes[1].id = "";  } }gbi(layid2).style.width=wid1+'px';gbi("frmLy").style.width=getNWid+'px';gbi("frmLy").style.height=getnHei+'px';gbi("lFr1").style.width=getNWid+'px';gbi("lFr1").style.border='0';gbi("lFr1").style.height=getnHei+'px';var clientheight=gHei;var clientwidth=getNWid;var layShOb=gbi(layid2);gbi('modal2').style.display='block';gbi(layid2).style.display='block';cliwid=(clientwidth/2)-(wid1/2);cliHei= dsoctop+(nHei/2)-((gbi(layid2).offsetHeight)/2);layShOb.style.left=cliwid-10+'px';if((gbi(layid2).offsetHeight)>getnHei){layShOb.style.top=0;}else{layShOb.style.top=cliHei+'px';}closewidthpos=parseInt(cliwid, 10)+parseInt(wid1, 10)-60;if(navigator.appName=='Microsoft Internet Explorer'){gbi("frmLy").style.display='block';}if(gbi('addFAnc'+layid2)==null){var newinDiv1=crtDiv();var newinDiv2=crtDiv();newinDiv1.id='addFAnc'+layid2;newinDiv1.style.position='absolute';newinDiv2.id='addLAnc'+layid2;var getFullCont=gbi(layid2).innerHTML;gbi(layid2).innerHTML='';gbi(layid2).appendChild(newinDiv1);gbi(layid2).innerHTML+=getFullCont;gbi(layid2).appendChild(newinDiv2);}gbi('addFAnc'+layid2).innerHTML='<a href="#" onfocus="fcN(\'last'+layid2+'\')">'+spacer+'</a>';gbi('addLAnc'+layid2).innerHTML='<a href="#" onfocus="fcN1(\''+layid2+'\')">'+spacer+'</a>';layid1=layid2;ceID1=ceID2;fcN2(layid2);var lastD=gbi(layid2).getElementsByTagName("bdo");var lastd1=lastD[0].childNodes;if(lastd1[0].rel=='last');lastd1[0].id="last"+layid2;}
+function gbi(layidNew){return document.getElementById(layidNew)}
+function gbTN(layidNew){return document.getElementsByTagName(layidNew)}
+function crtDiv(){return document.createElement('div')}
+function ddBd(){return document.body;}
+function headLB(layId, clc){if(!clc){var hd=document.write('<div class="lHead">'+layId+'</div>');}else{var hd=document.write('<div class="lHead"><a href="javascript:void(0);" onclick="hidemodal();" class="fr mt10" title="Close"><span class="crossLB">&nbsp;</span></a><span class="lhs">'+layId+'</span></div>');}}
+function hidemodal(){refLB();gbi('modal2').style.display='none';gbi(layid1).style.display='none';gbi("frmLy").style.display='none';if(ceID1){try{ceID1.focus();}	catch(e){if(gbi(ceID1)) gbi(ceID1).focus();}}layid2='';}
+function focuschange(layid){var byTag=gbi(layid).getElementsByTagName('a');byTag[0].focus();}
+function fcN2(layid){var byTag1=gbi(layid);for(i=0; i<byTag1.childNodes.length; i++){var byTag2=byTag1.childNodes[i];if(byTag2){rec1(byTag2);}if(bool){break;}else{fcN1(layid)};}}
+var ndOG='';
+var ndoJ='';
+function rec1(ndO){bool=false;for(var j=0; j<ndO.childNodes.length; j++){if(((ndO.childNodes[j].parentNode.style.display)=='none')||((ndO.childNodes[j].parentNode.parentNode.style.display)=='none')||((ndO.childNodes[j].parentNode.parentNode.parentNode.style.display)=='none')||((ndO.childNodes[j].parentNode.parentNode.parentNode.parentNode.style.display)=='none')){}else{if(((ndO.childNodes[j].nodeName)=='INPUT') && ((ndO.childNodes[j].type)!='hidden') && ((ndO.childNodes[j].style.display)!='none') && ((ndO.childNodes[j].disabled)!=true)){ndOG=ndO; ndoJ=j;setTimeout('blankF()', 100);bool=true;}else if(((ndO.childNodes[j].nodeName)=='TEXTAREA') && ((ndO.childNodes[j].type)!='hidden') && ((ndO.childNodes[j].style.display)!='none') && ((ndO.childNodes[j].disabled)!=true)){ndOG=ndO; ndoJ=j;setTimeout('blankF()', 100); bool=true;}else if(((ndO.childNodes[j].nodeName)=='SELECT') && ((ndO.childNodes[j].type)!='hidden') && ((ndO.childNodes[j].style.display)!='none') && ((ndO.childNodes[j].disabled)!=true)){ndOG=ndO; ndoJ=j;setTimeout('blankF()', 100); bool=true;}else{if(ndO.childNodes[j]){rec1(ndO.childNodes[j]);}}if(bool){break;}}}}
+function blankF(){
+  ndOG.childNodes[ndoJ].focus();
+}
+function fcN1(layid){var byTag=gbi(layid).getElementsByTagName('a');byTag[1].focus();}
+function fcN(layid){var obNe=gbi(layid);if(((obNe.parentNode.style.display)=='none') || ((obNe.parentNode.parentNode.style.display)=='none') || ((obNe.parentNode.parentNode.parentNode.style.display)=='none')){var inpNe=gbi(layid1).getElementsByTagName('input');inpNe[inpNe.length-1].focus();}else{obNe.focus();}} 
+function altS() {var myWidth = 0, myHeight = 0;if( typeof( window.innerWidth ) == 'number' ) {myWidth = window.innerWidth-17;myHeight = window.innerHeight-18;}else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {myWidth = document.documentElement.clientWidth;myHeight=document.documentElement.clientHeight;}else if( ddBd() && ( ddBd().clientWidth || ddBd().clientHeight ) ) {myWidth = ddBd().clientWidth;myHeight = ddBd().clientHeight;}nHei=myHeight;return myWidth;}
+function refLB(){var obNe=gbi(layid1);var inpT=	obNe.getElementsByTagName('INPUT');for(i=0; i<inpT.length; i++){var clN=inpT[i].className;clN = String(clN);var clN1=clN.match('checked1');if(clN1!='checked1'){if((inpT[i].type)=='checkbox'){inpT[i].checked=false;}else if(((inpT[i].type)=='text') || ((inpT[i].type)=='password') || ((inpT[i].type)=='file')){inpT[i].value='';}}}var tArea=	obNe.getElementsByTagName('TEXTAREA');for(i=0; i<tArea.length; i++){tArea[i].innerHTML='';}var selectType=	obNe.getElementsByTagName('SELECT');for(i=0; i<selectType.length; i++){selectType[i].selectedIndex=0;}chkErr('div', 'err');chkErr('span', 'err');chkErr('INPUT', 'errorfill');chkErr('TEXTAREA', 'errorfill');chkErr('SELECT', 'errorfill');}
+function chkErr(divName){var obNe=gbi(layid1);var divType=obNe.getElementsByTagName(divName);for(var i=0; i<divType.length; i++){var clN= divType[i].className;clN = String(clN);var clN1=clN.match('errorfill');if(clN1==null){if(((clN)=='err') || ((clN)=='error1') || ((clN)=='error2') || ((clN)=='error3')){if((divType[i].style.display)!='none'){if((divType[i].style.display)=='block'){divType[i].style.display='none';}else if((divType[i].style.display)==''){divType[i].style.display='none';}else{divType[i].className='noerror';}}}}else{var clN2=clN.split(' ');var newClass='';for (var j=0; j<clN2.length; j++){if(clN2[j]!='errorfill'){newClass+=clN2[j]+" ";}}divType[i].className=newClass;}}}
+
+var $a={
+show:function(id){
+       gbi(id).style.display='';
+     },
+hide:function(id){
+       gbi(id).style.display='none';
+     },
+classChange:function(id, oldClass, newClass){
+              aObj='';
+              if(typeof id == 'object')
+                aObj=id;
+              else
+                aObj=gbi(id);
+              if(aObj.className==oldClass)
+                aObj.className=newClass;
+            },
+toggleSH:function(id){
+           aObj='';
+           if(typeof id == 'object')
+             aObj=id;
+           else
+             aObj=gbi(id);
+           if(aObj.style.display=='none')
+             aObj.style.display='';
+           else
+             aObj.style.display='none';
+         },
+toggletxt:function(id, oldTxt, newTxt){
+            aObj='';
+            if(typeof id == 'object')
+              aObj=id;
+            else
+              aObj=gbi(id);
+            if(aObj.innerHTML==oldTxt)
+              aObj.innerHTML=newTxt;
+            else
+              aObj.innerHTML=oldTxt;
+          },
+toggleclass:function(id, oldclass, newclass){
+              aObj='';
+              if(typeof id == 'object')
+                aObj=id;
+              else
+                aObj=gbi(id);
+              if(aObj.className==oldclass)
+                aObj.className=newclass;
+              else
+                aObj.className=oldclass;
+            },
+classChangeLoop:function(id, oldclass, newclass, curObj){
+                  aObj='';
+                  if(typeof id == 'object')
+                    aObj=id;
+                  else
+                    aObj=gbi(id);
+                  var getA=aObj.getElementsByTagName('a')
+                    for(i=0; i<getA.length; i++){
+                      $a.classChange(getA[i], oldclass, newclass);
+                    }
+                  curObj.className=oldclass;
+                }
+}
+
+var dd={
+topVal:'',
+       su:'',
+       dropGeneric:function(id, clN, direction, top1, eventName){
+         var getA=gbi(id).getElementsByTagName('a');
+         for(i=0; i<getA.length; i++){
+           getARel=getA[i].rel;
+           getA1=getA[i];
+           dd.events(getA1, getARel, getA, clN, direction, top1, eventName)
+         }
+       },
+events:function(getA1, getARel, getA, clN, direction, top1, eventName){
+         if(eventName=='over'){
+           getA1.onmouseover=function(e){
+             dd.mouseTarget(getA1, getARel, getA, clN, direction, top1, eventName, this);
+           }
+         }
+         else{
+           getA1.onclick=function(e){
+             dd.mouseTarget(getA1, getARel, getA, clN, direction, top1, eventName, this);
+           }
+         }
+
+         getA1.onmouseout=function(e){
+           if(getARel)
+             gbi(getARel).className=clN+' dspN'
+         }
+
+         for(var i=0; i<getA.length; i++){
+           if(getA[i].rel){
+             dd.mouseOut(getA[i].rel, clN);
+           }
+         }
+       },
+mouseOut:function(getA, clN){
+           gbi(getA).onmouseover=function(){
+             this.className=clN+' dspB';
+           }
+           gbi(getA).onmouseout=function(){
+             this.className=clN+' dspN';
+           }
+         },
+mousePrevent:function(getC){
+               //getC.onmouseover=function(e){
+               //e.preventDefault();
+               //}
+             },
+mouseTarget:function(getA1, getARel, getA, clN, direction, top1, eventName, curObjN){
+              for(i=0; i<getA.length; i++){
+                if(getA[i].rel)
+                  gbi(getA[i].rel).className=clN+' dspN';
+              }
+              var getFirstDiv=gbi(getARel).getElementsByTagName('div');
+              getFirstDiv[0].style.display='none';
+              gbi(getARel).className=clN+' dspB';
+              gbi(getARel).style.width=gbi(getARel).offsetWidth-2+'px';
+              var setBdr=(gbi(getARel).offsetWidth-curObjN.offsetWidth);
+              getFirstDiv[0].style.display='';
+              if(setBdr>=0)
+                getFirstDiv[0].style.width=setBdr+'px';
+
+              if(direction!='L'){
+                gbi(getARel).style.left=findPosX(curObjN)+curObjN.offsetWidth-(gbi(getARel).offsetWidth)+'px';
+              }
+              else{
+                gbi(getARel).style.left=findPosX(curObjN)+'px';
+              }
+
+              gbi(getARel).style.top=findPosY(curObjN)+curObjN.offsetHeight-top1+'px';
+              if(gbi(getARel).offsetWidth<curObjN.offsetWidth){
+                gbi(getARel).style.width=curObjN.offsetWidth-2+'px';
+              }
+            }
+}
+
+/*tooltip*/
+function ce(ceID){
+  return document.createElement(ceID);
+}
+
+/*tooltip*/
+var myWin='';
+var content=0;
+var idfield=0;
+var iframeH=10;
+
+
+function tooltip(content, idObj, leftStart) {
+  if(!(gbi('hintbox')))
+  {
+    var div1=ce('div');
+    div1.id='hintbox';
+    div1.setAttribute('visibility', 'hidden');
+    var div2=ce('div');
+    div2.id='new_';
+    div1.appendChild(div2);
+    var div3=ce('div');
+    div3.id='toolFrame';
+    div3.setAttribute('visibility', 'hidden');
+    var iframe1=ce('iframe');
+    iframe1.id='iframeTool';
+    iframe1.className='framecss';
+    div3.appendChild(iframe1);
+    var bodyOBJ=document.getElementsByTagName('body');
+    bodyOBJ[0].appendChild(div1);
+    bodyOBJ[0].appendChild(div3);
+  }
+  var curleft=findPosX(idObj) || 0;
+  var curtop=findPosY(idObj) || 0;
+  var obj2=gbi('hintbox');
+  var objFrame=gbi('toolFrame');
+  obj2.style.top=objFrame.style.top=curtop+20+"px";
+  var leftStart1=0;
+  if(leftStart)
+    leftStart1=leftStart;
+  else
+    leftStart1=idObj.offsetWidth;
+  obj2.style.left=objFrame.style.left=parseInt(leftStart1)+curleft+"px";
+  obj1=gbi('new_');
+  obj1.innerHTML="<div id='forarrow'>&nbsp;</div>"+content;
+  obj2.style.visibility=objFrame.style.visibility='visible';
+  content=content;
+  obj=idObj;
+  gbi('iframeTool').height=obj2.offsetHeight+"px";
+  gbi('iframeTool').width=obj2.offsetWidth+"px";
+  idObj.onblur=hidetip;
+}
+function hidetip(){
+  dmObj=gbi("hintbox");
+  dmFrm=gbi("toolFrame");
+  dmObj.style.visibility=dmFrm.style.visibility="hidden";
+  dmObj.style.left=dmFrm.style.left="-500px";
+}
+
+var accordins={
+accH:function(obj, getULId){
+       var getSpan=obj.getElementsByTagName('span');
+       $a.toggleSH(getULId);
+       if(getSpan[0].className=='arrDown')
+         $a.toggleclass(getSpan[0], 'arrDown', 'arrUp');
+       else
+         $a.toggleclass(getSpan[0], 'arrUp', 'arrDown');
+     }
+}
+
+/*carousel*/
+function gebtn(id, tagN){
+  return gbi(id).getElementsByTagName(tagN);
+}
+function outerWidth(getLIA){
+  return getLIA[0].offsetWidth;
+}
+function outerHeight(getLIA){
+  return getLIA[0].offsetHeight;
+}
+function getn(id, tagName){
+  return gbi(id).getElementsByTagName(tagName);
+}
+
+
+function setCss(obj){
+  for(i=1; i<arguments.length; i++){
+    var getSplit=arguments[i].split(":");
+    obj.style[getSplit[0]]=getSplit[1];
+  }
+}
+var carousel=function(id, timer){
+  if(gbi(id)) {
+  noofLI=getn(id, 'li');
+  knowM=gbi(id+'knowMore');
+  bottomLnk=getn(id+'mp', 'a');
+  lftLnk=gbi(id+'leftA');
+  rgtLnk=gbi(id+'rgtA');
+  currentObj=bottomLnk[0];
+  setLft=0;
+  function start(){
+    lftLnk.onclick=function(){
+      setLft=1;
+      moveLR(id, timer);
+    }
+    rgtLnk.onclick=function(){
+      setLft=0;
+      moveLR(id, timer);
+    }
+    if(bottomLnk.length>0){
+      for(i=0; i<bottomLnk.length; i++){
+        bottomLnk[i].onclick=function(i){
+          return function(){
+            setLft=0;
+            moveLR(id, timer, bottomLnk[i]);
+          }
+        }(i)
+      }
+    }
+    if(timer){
+      setInterval('moveLR("'+id+'", '+timer+', 0)', timer);
+    }
+  }
+
+  start();
+  }
+}
+function moveLR(id, timer, obj){
+  if(gbi(id)) {
+  noofLI=getn(id, 'li');
+  knowM=gbi(id+'knowMore');
+  bottomLnk=getn(id+'mp', 'a');
+  lftLnk=gbi(id+'leftA');
+  rgtLnk=gbi(id+'rgtA');
+  currentObj=bottomLnk[0];
+
+  if(obj){
+    for(i=0; i<bottomLnk.length; i++){
+      bottomLnk[i].className='midPoint';
+      noofLI[i].style.display='none';
+    }
+    bottomLnk[parseInt(obj.rel)-1].className='midPointSel';
+    noofLI[parseInt(obj.rel)-1].style.display='';
+  }
+  else{
+    for(i=0; i<bottomLnk.length; i++){
+      if(bottomLnk[i].className=='midPointSel'){
+        bottomLnk[i].className='midPoint';
+        noofLI[i].style.display='none';
+        if(setLft==1){
+          if(i-1>=0){
+            currentObj=bottomLnk[i-1];
+            noofLI[i-1].style.display='';
+          }
+          else{
+            currentObj=bottomLnk[bottomLnk.length-1];
+            noofLI[bottomLnk.length-1].style.display='';
+          }
+        }
+        else{
+          if(i+1<bottomLnk.length){
+            currentObj=bottomLnk[i+1];
+            noofLI[i+1].style.display='';
+          }
+          else{
+            currentObj=bottomLnk[0];
+            noofLI[0].style.display='';
+          }
+        }       
+      }
+    }
+    currentObj.className='midPointSel';
+  }
+  setLft=0;
+  for(i=0; i<noofLI.length; i++){
+    if(noofLI[i].style.display=='')
+    {
+      knowM.href=noofLI[i].getElementsByTagName('a')[0].href;
+      knowM.innerHTML=noofLI[i].getElementsByTagName('a')[0].rel;
+    }
+  }
+  }
+}
+
+
+var monthminus=-1;
+var yearminus=-1;
+var yearplus=1;
+var monthplus=1;
+var date= new Date();
+var month=(date.getMonth());
+var day=(date.getDate());
+var dayNm=(date.getDay());
+var year=(date.getFullYear());
+var calDiv1='calendar1';
+var frameName1='';
+var calendarNameG='';
+
+//if(navigator.appName!='Microsoft Internet Explorer')
+//{year=year+1900;}
+var monthArray=new Array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
+var dayArray=new Array(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31);
+var dayName=new Array('Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa');
+
+
+function incMonth(month1, year1)
+{var monthNew=parseInt(month1);
+  if(monthNew<11)
+  {month=monthNew+1;
+    var yearNew=parseInt(year1);
+    year=yearNew;
+  }
+  else
+  {var yearNew=parseInt(year1);
+    year=yearNew+1;
+    month=0;}
+}
+
+function decMonth(month1, year1)
+{var monthNew=parseInt(month1);
+  if(monthNew>0)
+  {month=monthNew-1;
+    var yearNew=parseInt(year1);
+    year=yearNew;
+  }
+  else
+  {var yearNew=parseInt(year1);
+    year=yearNew-1;
+    month=11}}
+
+function incYear(year1)
+{
+  var yearNew=parseInt(year1);
+
+  year=yearNew+1;}
+
+function decYear(year1)
+{
+  year=(parseInt(year1))-1;
+}
+
+var obj;
+var selectID=0;
+var cal_new=0;
+var dateNew1=new Date();
+var dateNew_month=(dateNew1.getMonth());
+var dateNew_day=(dateNew1.getDate());
+var dateNew_dayNm=(dateNew1.getDay());
+
+var dateNew_year=(dateNew1.getYear());
+var dateRes;
+
+if(navigator.appName!='Microsoft Internet Explorer')
+{dateNew_year=parseInt(dateNew_year)+1900;}
+
+function changeDate(resPeriod, resBase)
+{
+  if(resBase=='m')
+  {dateNew1.setMonth(parseInt(dateNew_month+parseInt(resPeriod)))}
+  else if(resBase=='y')
+  {dateNew1.setYear((parseInt(dateNew_year)+parseInt(resPeriod)))}
+  else
+  {dateNew1.setDate((parseInt(dateNew_day)+parseInt(resPeriod)))}
+  dateRes = {"dp":dateNew1.getDate(), "mp":(parseInt(dateNew1.getMonth())+1), "yp":dateNew1.getYear()};
+  if(navigator.appName!='Microsoft Internet Explorer')
+  {
+    dateRes["yp"]=dateRes["yp"]+1900;
+  }
+}
+
+var calIDN=1;
+function createDivs(calNo)
+{
+  for(calIDN=1;calIDN<=calNo;calIDN++)
+  {
+    var div1=document.createElement('div');
+    div1.id="calendar"+calIDN;
+    var frame1=document.createElement('iframe');
+    frame1.id="iframeLayer"+calIDN;
+    frame1.src='';
+    document.body.appendChild(div1);
+    document.body.appendChild(frame1);
+  }
+}
+
+var formatG='';
+var sepG='';
+var direcG='';
+
+function showDate1(obj, calendarName, calNo, iframeName, limit, formatDt, sepDt, direction)
+{
+
+	document.onclick=function(e){
+		if(!e) e = window.event;
+		var targ =  e.target||e.srcElement;
+	//	console.log(targ.getAttribute('align')!="right")
+		if(!$n(targ).hasClass('calHead') && !$n(targ).hasClass('calDisable') && !$n(targ).hasClass('calBlank') && !$n(targ).hasClass('weekDay') && targ.nodeName!="IMG" && targ.getAttribute('align')!='right'){
+			hideDate();
+		}
+		
+	}
+  formatG=formatDt || 'ymd';
+  sepG=sepDt || '-';
+  direcG=direction || 'b';
+
+  var range=limit || 0;
+  if(((gbi(calendarName).style.display)=='block') && (calendarName==calendarNameG))
+  {hideDate();}
+  else
+  {	hideDate();
+    if((cal_new<calNo) && (calendarNameG!=calendarName))
+    {
+      calendarNameG=calendarName;
+      frameName1=iframeName;
+      cal_new=cal_new+1;
+      showDate(obj, range);
+    }
+    else
+    {
+
+      calendarNameG=calendarName;
+	  findPosCal(obj, calendarName);
+      findPosCal(obj, frameName1);
+      frameName1=iframeName;
+    }
+  }
+}
+
+function showDate(obj, range)
+{
+
+  {
+    var rangeDate2 = new Date();
+    var rangeDate1 = new Date();
+    if(direcG=='b')
+      rangeDate1.setDate(rangeDate2.getDate()-range);
+    else
+      rangeDate1.setDate(rangeDate2.getDate()+range);
+    rangeDate2.setDate(rangeDate2.getDate());
+
+    obj=obj;
+    var isleap1=Date.isleap(year);
+    if(isleap1)
+      dayArray[1]=29;
+    else
+      dayArray[1]=28;
+    monthDay='';
+    var firstDate = new Date(monthArray[month]+" 01, "+year+" 00:00:00");
+    var firstDay=firstDate.getDay();
+    findPosCal(obj, calendarNameG);
+    findPosCal(obj, frameName1);
+    var basicDiv1=document.createElement('div');
+    var basicDiv=document.createElement('table');
+    basicDiv.className="calClass";
+    basicDiv.style.border="1px solid #63ceff";
+    basicDiv.style.background="#e7f9fd";
+    var basicTR_new=document.createElement('tr');
+    var basicTd1=document.createElement('td');
+    basicTd1.innerHTML="<a class='calHead' href='javascript:decYear(\""+year+"\"),showDate(\""+obj+"\","+range+");'>&lt;&lt;</a>";
+    var basicTd2=document.createElement('td');
+    basicTd2.innerHTML="<a class='calHead' href='javascript:decMonth(\""+month+"\", \""+year+"\"),showDate(\""+obj+"\","+range+");'>&lt;</a>";
+    var basicTd3=document.createElement('td');
+    basicTd3.setAttribute('colspan', 3);
+    basicTd3.innerHTML="<strong class='calHead'>"+monthArray[month]+" "+year+"</strong>";
+    var basicTd4=document.createElement('td');
+    basicTd4.innerHTML="<a class='calHead' href='javascript:incMonth(\""+month+"\", \""+year+"\"),showDate(\""+obj+"\","+range+");'>&gt;</a>";
+    var basicTd5=document.createElement('td');
+    basicTd5.innerHTML="<a class='calHead' href='javascript:incYear(\""+year+"\"),showDate(\""+obj+"\","+range+");'>&gt;&gt;</a>";
+
+
+    basicTR_new.appendChild(basicTd1);
+    basicTR_new.appendChild(basicTd2);
+    basicTR_new.appendChild(basicTd3);
+    basicTR_new.appendChild(basicTd4);
+    basicTR_new.appendChild(basicTd5);
+
+    basicDiv.appendChild(basicTR_new);
+    var firstDayNo=dayNm%7;
+    var basicTR=document.createElement('tr');
+    for(var i=1; i<=dayName.length; i++)
+    {	
+      var basicTD=document.createElement('td');
+      basicTD.className="weekDay";
+      basicTD.innerHTML=dayName[i-1];
+      basicTR.appendChild(basicTD);		
+    }
+    basicDiv.appendChild(basicTR);
+    var k=1;
+    var	loop=0;
+    firstD1=firstDay;
+    while(k<=dayArray[month])
+    {
+      for(var i=1; i<=(((dayArray[month]+firstDayNo)/7)+1); i++)
+      {basicTR=document.createElement('tr');
+        for (var l=0; l<7; l++)
+        {
+          if(firstDay>0)
+          {
+            var basicTD1=document.createElement('td');
+            basicTD1.align='right';
+            basicTD1.innerHTML='&nbsp';
+            basicTR.appendChild(basicTD1);
+            firstDay=firstDay-1;
+          }
+          else if(k-1==dayArray[month])
+          {
+            if((firstD1+(k-1))%7!=0){
+              var basicTD1=document.createElement('td');
+              basicTD1.align='right';
+              basicTD1.innerHTML='&nbsp';
+	          $n(basicTD1).addClass('calBlank')	
+              basicTR.appendChild(basicTD1);
+              firstD1=firstD1+1;
+            }
+            else
+              break;
+          }
+
+          else
+          {	if(k<=dayArray[month])
+            {var basicTD=document.createElement('td');
+              basicTD.align='right';
+
+              var dateShow = new Date(); dateShow.setFullYear(parseInt(year),parseInt(month),k);
+              dateShow.setHours(0,0,0,0);
+              rangeDate1.setHours(0,0,0,0);
+              rangeDate2.setHours(0,0,0,0);
+              var cond1=true;
+              if(direcG=='b')
+              {cond1=((dateShow>rangeDate1) && (dateShow<=rangeDate2))}
+              else
+              {cond1=((dateShow<rangeDate1) && (dateShow>=rangeDate2))}
+              if(!range || cond1)
+              {basicTD.innerHTML="<a id='"+calendarNameG+"date"+k+"' href='javascript:setDate1("+k+", \""+obj+"\", \""+calendarNameG+"date"+k+"\", \""+year+"\", \""+month+"\", hideDate())' >"+k+"</a>";}
+              else {basicTD.innerHTML = "<span class='calDisable'  id='"+calendarNameG+"date"+k+"'>"+k+"</span>";}
+              basicTR.appendChild(basicTD);
+              k=k+1;
+
+            }
+            else
+              break;
+          }
+        }
+        basicDiv.appendChild(basicTR);
+      }
+    }
+    var close_new=document.createElement('tr');
+    var closeTd1=document.createElement('td');
+    closeTd1.setAttribute('colspan', 7);
+    closeTd1.style.padding='4px';
+    closeTd1.innerHTML="<a href='javascript:hideDate()' style='display:block;'>Close</a>";
+    close_new.appendChild(closeTd1);
+    basicDiv.appendChild(close_new);
+
+    basicDiv1.appendChild(basicDiv);
+
+    gbi(calendarNameG).innerHTML=basicDiv1.innerHTML;
+    gbi(frameName1).style.height=gbi(calendarNameG).offsetHeight+"px";
+    gbi(frameName1).style.width=gbi(calendarNameG).offsetWidth+'px';
+  }
+}
+
+function selectCal(selectOBJ)
+{
+  for(var i=1; i<dayArray[month];i++)
+  {gbi(calendarNameG+'date'+i).className='';}
+  var obj1=gbi(selectOBJ);
+  obj1.className='selDate';
+}
+
+function splitDate(dateId)
+{
+  var fieldVal=gbi(dateId).value;
+  if(fieldVal!='')
+  {var splitVar=fieldVal.split('-');
+    month=splitVar[1]-1;
+    year=splitVar[0];
+    date=splitVar[2];
+    gbi(calendarNameG+"date"+splitVar[2]).className='selDate';
+    selectID=1;}
+}
+
+function hideDate()
+{
+  var ij=1;
+  while(gbi('calendar'+ij))	
+  {gbi('calendar'+ij).style.display='none';
+    gbi('iframeLayer'+ij).style.display='none';
+    ij=ij+1;
+  }
+}
+
+function showDivDate()
+{
+  gbi(calendarNameG).style.display='block';
+  gbi(frameName1).style.display='block';
+}
+
+var newMonthSet=0;
+var newYearSet=0;
+var newDateSet=0;
+function setDate1(newDate, objNew, selectOBJ, curYear, curMonth)
+{
+  newMonthSet=parseInt(curMonth)+1;
+  newYearSet=curYear;
+  var obj1=gbi(objNew);
+  if(newMonthSet<10)
+    newMonthSet="0"+String(newMonthSet);
+  newDateSet=newDate;
+  if(newDate<10)
+    newDateSet="0"+String(newDate);
+  obj1.value=dateFormat();
+  obj1.focus();
+  selectCal(selectOBJ);
+}
+function dateFormat()
+{
+  if(formatG=='ymd')
+    return newYearSet+sepG+newMonthSet+sepG+newDateSet;
+  else if(formatG=='dmy')
+    return newDateSet+sepG+newMonthSet+sepG+newYearSet;
+  else if(formatG=='dmyy')
+    return newDateSet+sepG+newMonthSet+sepG+newYearSet.substr(2,4);
+  else if(formatG=='mdy')
+    return newMonthSet+sepG+newDateSet+sepG+newYearSet;
+}
+Date.isleap = function(year){															//check the year is a leap year or not.
+  return ((year % 400) == 0) ? 1 :((year % 100) == 0) ? 0 :((year % 4)   == 0) ? 1 :0;
+}
+
+function findPosCal(iframePos, divID) {
+  obj=gbi(iframePos);
+  var curleft = curtop = 0;
+  if (obj.offsetParent) {
+    curleft = obj.offsetLeft;
+    curtop = obj.offsetTop;
+    while (obj = obj.offsetParent) {
+      curleft += obj.offsetLeft;
+      curtop += obj.offsetTop;
+    }
+  }
+  gbi(divID).style.top=curtop+20+"px";
+  gbi(divID).style.left=curleft+"px";
+  showDivDate();
+}
+
+function showRow(tabid){
+  var obj=gbi(tabid);
+  try {
+    var getTR=obj.getElementsByTagName('tr');
+    for(i=0; i<getTR.length; i++){
+      visbileCont(getTR[i])
+    }
+  }
+  catch(e) {}
+}
+function visbileCont(obj){
+  obj.onmouseover=function(){
+    var getP=obj.getElementsByTagName('p');
+    if(getP.length>0){
+      getP[0].className='tbGtxtH1';
+      obj.style.background='#fafafa';
+    }
+  }
+  obj.onmouseout=function(){
+    var getP=obj.getElementsByTagName('p');
+    if(getP.length>0){
+      getP[0].className='tbGtxtH';
+      obj.style.background='';
+    }
+  }
+}

@@ -1,0 +1,573 @@
+function fetchExistingContactLists(type) {
+  var reqCL = getXmlHttpObject();
+
+  reqCL.onreadystatechange = function() {
+    if(reqCL.readyState == 4){
+      if(reqCL.status == 200) {
+        if(reqCL.responseText == 'ERROR') {
+          alert('Error. Please try again.');
+          return false;
+        }
+        gbi('folderList_'+type).innerHTML = '';
+        var contactLists = reqCL.responseText.split('|X|');
+
+        var class1 = class2 = '';
+        for(var i=0; i<contactLists.length; i++) {
+          var arr = contactLists[i].split('||');
+          if(i % 2 == 0) {
+            class1 = class2 = '';
+          } else {
+            class1 = 'oddRw'; class2 = 'sel';
+          }
+
+          var createTR=document.createElement('tr');
+          createTR.setAttribute('id', 'tr_folderList_'+arr[0]);
+          createTR.className=class1;
+
+          var createTD=document.createElement('td');
+          var createSPAN=document.createElement('span');
+          createSPAN.className=class2;
+
+          var createA1=document.createElement('a');
+          createA1.href='#';
+          createA1.setAttribute('onclick', "getContacts('"+type+"', '"+arr[0]+"', '"+arr[1]+"');return false;");
+          createA1.innerHTML=arr[1];
+          createSPAN.appendChild(createA1);
+
+          var createA2=document.createElement('a');
+          createA2.href='#';
+          createA2.setAttribute('onclick', "deleteFolder('"+type+"', '"+arr[0]+"', '"+arr[1]+"');return false;");
+          createA2.className='delete';
+
+          createTD.appendChild(createSPAN);
+          createTD.appendChild(createA2);   
+
+          createTR.appendChild(createTD);
+          gbi('folderList_'+type).appendChild(createTR);
+        }
+      }
+    }
+  }
+
+  var url = (type == 'r') ? requestPath+'/existingList/refer' : requestPath+'/existingList/share';
+  reqCL.open("GET", url, true);
+  reqCL.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  reqCL.send(null);
+}
+
+function deleteFolder(type, contactListId, contactListName) {
+  var reqCL = getXmlHttpObject();
+  reqCL.onreadystatechange = function() {
+    if(reqCL.readyState == 4){
+      if(reqCL.status == 200) {
+        if(reqCL.responseText == 'OK') {
+          //re-assign classes
+          gbi('tr_folderList_'+contactListId).style.display='none';
+          alert("Folder '"+contactListName+"' deleted successfully.");
+        }
+        else { 
+          alert('Error. Please try again.');
+        }
+      }
+    }
+  }
+
+  var url = requestPath+'/existingList/delete?contactListId='+contactListId;
+  reqCL.open("GET", url, true);
+  reqCL.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  reqCL.send(null);
+}
+
+function getContacts(type, contactListId, contactListName) {
+  gbi('contactsList_'+type).innerHTML = '';
+  var reqCL = getXmlHttpObject();
+  reqCL.onreadystatechange = function() {
+
+    if(reqCL.readyState == 4){
+      if(reqCL.status == 200) {
+        if(reqCL.responseText != 'OK') {
+          var list = reqCL.responseText.split('|X|');
+          var class1 = class2 = '';
+          for(var i=0; i<list.length; i++) {
+            var contact = list[i];
+            if(i % 2 == 0) {
+              class1 = class2 = '';
+            } else {
+              class1 = 'oddRw'; class2 = 'sel';
+            }
+            gbi('folderNameId_'+type).innerHTML = contactListName;
+
+            var createTR=document.createElement('tr');
+            createTR.className=class1;
+
+            var createTD=document.createElement('td');
+            var createSPAN=document.createElement('div');
+            createSPAN.setAttribute('name',type+'FolderList');
+            createSPAN.className=class2;
+            createSPAN.innerHTML = contact;
+
+            createTD.appendChild(createSPAN);
+            createTR.appendChild(createTD);
+            gbi('contactsList_'+type).appendChild(createTR);
+          }
+        }
+        else {
+          alert('Error. Please try again.');
+        }
+      }
+    }
+  }
+
+  var url = requestPath+'/existingList/getContacts?contactListId='+contactListId;
+  reqCL.open("GET", url, true);
+  reqCL.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  reqCL.send(null);
+}
+
+function createFolder() {
+  var reqCL = getXmlHttpObject();
+  reqCL.onreadystatechange = function() {
+    if(reqCL.readyState == 4){
+      if(reqCL.status == 200) {
+        var folderName = gbi('fldrName').value;
+        hidemodal();
+        if(reqCL.responseText == 'ERROR') {
+          alert('Error. Please try again.');
+        }
+        else {
+          alert("New contact list '"+folderName+"' is created successfully.");
+        }
+      }
+    }
+  }
+
+  var emails = (gbi('contactListType').value == 's') ? getSelectedEmails('shareEmailList') : getSelectedEmails('referEmailList');
+  var url = requestPath+'/existingList/create?listType='+gbi('contactListType').value+'&fldrName='+gbi('fldrName').value+'&emails='+emails+'&xhr=1';
+  reqCL.open("GET", url, true);
+  reqCL.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  reqCL.send(null);
+}
+
+function getSelectedEmails(id) {
+  var emails = '';
+  var a = document.getElementsByName(id);
+  for(var i = 0;i < a.length; i++) {
+    emails += (emails !='') ? ',' : '';
+    emails += a[i].innerHTML;
+  }
+  return emails;
+}
+
+var httpObjectForDomain = null; 
+function deleteDomain(domainId) {
+  httpObjectForDomain = getXmlHttpObject();
+  var url  = gbi('deleteDomainUrl').value+'?domainId='+domainId;
+
+  httpObjectForDomain.open('GET', url, true);
+  httpObjectForDomain.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  httpObjectForDomain.send(null);
+  httpObjectForDomain.onreadystatechange = handleDeleteDomain;
+}
+
+function handleDeleteDomain() {
+  if(httpObjectForDomain.readyState == 4) {
+    if(httpObjectForDomain.status == 200) {
+    var responseTxtForDomain = trim(httpObjectForDomain.responseText);
+      var response = responseTxtForDomain.split('|X|');
+      if(response[0] == 'OK') {
+        gbi('domain#'+response[1]).innerHTML='';
+        var arrDomains = document.getElementsByName('domainsSpan');
+        if(arrDomains.length == '0') {
+          addMore();
+        }
+        gbi('addM').style.display = '';
+      }else {
+        gbi('errorRefer').style.display = "";
+        gbi('errorRefer').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+      }
+    }
+    else {
+      gbi('errorRefer').style.display = "";
+      gbi('errorRefer').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+    }
+  }
+}
+function addDomain(uniqId) {
+  httpObjectForDomain = getXmlHttpObject();
+  var url  = gbi('addDomainUrl').value+'?domain='+gbi('domainTxtBox'+uniqId).value;
+  gbi('domainTxtSpan'+uniqId).innerHTML = '';
+  gbi('domainTxtSpan'+uniqId).style.display='none';
+
+  httpObjectForDomain.open('GET', url, true);
+  httpObjectForDomain.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+  httpObjectForDomain.send(null);
+  httpObjectForDomain.onreadystatechange = handleAddDomain;
+}
+
+function handleAddDomain() {
+  if(httpObjectForDomain.readyState == 4) {
+    if(httpObjectForDomain.status == 200) {
+    var responseTxtForDomain = trim(httpObjectForDomain.responseText);
+      var response = responseTxtForDomain.split('|X|');
+      if(response[0] == 'OK') {
+        var spanDomain = '<span id="domain#'+response[1]+'"><label for="domain"><strong>Domain name :</strong></label><span class="mTop3 fl" name="domainsSpan">'+response[2]+'</span>  <a class="plr7 fl mTop5" href="javascript:;" onclick="deleteDomain(\''+response[1]+'\');">Delete</a><span class="dispBlk cl p5"></span></span>';
+
+        gbi('test').innerHTML = gbi('test').innerHTML + spanDomain;
+      }
+      else {
+        gbi('errorRefer').style.display = "";
+        gbi('errorRefer').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+      }
+    }
+    else {
+      gbi('errorRefer').style.display = "";
+      gbi('errorRefer').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+    }
+  }
+}
+
+var HttpRequestObj = null;
+function getGmailContacts(url, gmailLogin) {
+  try{
+    var emailId = encodeURIComponent(gbi('gmailId').value);
+    var pswd    = encodeURIComponent(gbi('gmailPwd').value);
+    var request = "uname="+emailId  +"&pwd="+ pswd;
+    HttpRequestObj = getHTTPObject();
+    HttpRequestObj.open("POST", url, true);
+    //HttpRequestObj.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    HttpRequestObj.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    HttpRequestObj.setRequestHeader("Content-length", request.length);
+    HttpRequestObj.setRequestHeader("Connection", "close");
+    HttpRequestObj.send(request);
+    HttpRequestObj.onreadystatechange = handleGmailResponse;
+  }catch(error){ alert(error);}
+
+}
+
+function handleGmailResponse() {
+  if (HttpRequestObj.readyState == 4) {
+    if (HttpRequestObj.status == 200) {
+      var arrResponse = HttpRequestObj.responseText.split("|X|");
+      if(arrResponse[0].trim() == "OK") {
+        try{
+          var contacts = eval('(' + arrResponse[1] + ')');
+          displayContactList(contacts, 'gmail');
+        }catch(e) {alert(e); }
+      }
+      else if(arrResponse[0].trim() == 'error')
+      {
+        gbi("redtxt").innerHTML = arrResponse[1];
+        gbi("redtxt").style.display = "";
+      }
+    }
+    else
+    {  
+      gbi("createErrorMsgmove").innerHTML = "Please refresh your browser window & try again.";
+      gbi("createErrorMsgmove").style.display = "";
+    }
+  }
+  return(false);
+}
+function displayContactList(listJSON, source) {
+  if(source == 'referOutlook')
+    var prefix = 'refer';
+  else
+    var prefix = 'share';
+  gbi(source+"Total").innerHTML = listJSON.length;
+  var listTable = gbi(source+"List");
+  var tbody = document.createElement('tbody');
+  listTable.appendChild(tbody);
+  for(var i=0;i<listJSON.length;i++) {
+    var trow = document.createElement('tr');
+    tbody.appendChild(trow);
+    if (i%2 == 0) {
+      trow.setAttribute("class","oddRw");
+    }
+    trow.innerHTML = '<td width="2%"><input id="'+prefix+'Chk#'+listJSON[i]+'" type="checkbox" onclick="addInContainer(this,\''+source+'\')" name="'+source+'ListChkBox" value="'+listJSON[i]+'"></td><td width="49%">&lt;'+listJSON[i]+'&gt;</td>';
+  }
+  gbi(source+'Block').style.display='';
+  gbi(source+'Container').style.display = "";
+  gbi(source+'Container').scrollIntoView();
+  if(source == 'referOutlook')
+    gbi('referSelectedList').style.display = "";
+  else
+    gbi('selectedList').style.display = "";
+
+}
+
+
+function txtBlur(ele, action, defVal) {
+  if(action == "blur") {
+    ele.value = ele.value.replace(/^\s+/,'');
+    ele.value = ele.value.replace(/\s+$/,'');
+
+    if(ele.value=="") {
+      ele.value=defVal; 
+      ele.style.color="#8d8d8d";
+    }
+  }
+  else if(action == "focus" && ele.value == defVal) {
+    ele.value="";
+    ele.className +=" active";    
+  }
+}
+
+function mTabChange(mTabCh,mTabContent){
+  for(i=1; i<3; i++){
+    document.getElementById('mainTcont'+i).style.display='none';
+    document.getElementById(mTabContent).style.display='block';
+    document.getElementById('mainT'+i).className='notSel';
+    document.getElementById(mTabCh).className='sel';
+  }
+}
+
+function tabChange(tabCh,tabContent){
+  for(i=1; i<3; i++){
+    document.getElementById('tabCont'+i).style.display='none';
+    document.getElementById(tabContent).style.display='block';
+    document.getElementById('tabCh'+i).className='notSel';
+    document.getElementById(tabCh).className='sel';
+  }
+}
+
+function tabChangeR(tabChR,tabContentR){
+  gbi('successReferMsgMail').style.display = "none";
+  for(i=1; i<3; i++){
+    document.getElementById('tabContR'+i).style.display='none';
+    document.getElementById(tabContentR).style.display='block';
+    document.getElementById('tabChR'+i).className='notSel';
+    document.getElementById(tabChR).className='sel';
+  }
+}
+
+function vTabChange(vTabCh,vTabContent){
+  gbi('successShareMsgMail').style.display='none';
+  for(i=1; i<5; i++){
+    document.getElementById('vTabCont'+i).style.display='none';
+    document.getElementById(vTabContent).style.display='block';
+    document.getElementById('vTab'+i).className='notSel';
+    document.getElementById(vTabCh).className='sel';
+  }
+  if(vTabContent=='vTabCont1' || vTabContent=='vTabCont2' || vTabContent=='vTabCont3')
+    document.getElementById('emailList').style.display = 'block';
+  else
+    document.getElementById('emailList').style.display = 'none';
+  if(vTabCh == 'vTab1' ) {
+    gbi('gmailBlock').style.display='';
+    gbi('linkedinBlock').style.display='none';
+    gbi('outlookBlock').style.display='none';
+  } else if (vTabCh == 'vTab2') {
+    gbi('outlookBlock').style.display='none';
+    gbi('gmailBlock').style.display='none';
+    gbi('linkedinBlock').style.display='';
+  }  else if (vTabCh == 'vTab3') {
+    gbi('outlookBlock').style.display='';
+    gbi('gmailBlock').style.display='none';
+    gbi('linkedinBlock').style.display='none';
+  } else if (vTabCh == 'vTab4') {
+    gbi('outlookBlock').style.display='none';
+    gbi('gmailBlock').style.display='none';
+    gbi('linkedinBlock').style.display='none';
+  }
+}
+
+
+
+function vTabChangeN(vTabChN,vTabContentN){
+  gbi('shareSuccess').style.display='none';
+  for(i=1; i<4; i++){
+    document.getElementById('vTabN'+i).className='notSel';
+    document.getElementById(vTabChN).className='sel';
+  }
+  if(vTabChN == 'vTabN1') {
+    document.getElementById('fbButton').style.display='';
+    document.getElementById('tweetButton').style.display='none';
+    gbi('messageDiv').style.display='';
+    gbi('linkedInButton').style.display='none';
+  }
+  else if(vTabChN == 'vTabN2') {
+    document.getElementById('fbButton').style.display='none';
+    document.getElementById('tweetButton').style.display='';
+    gbi('messageDiv').style.display='';
+    gbi('linkedInButton').style.display='none';
+  }
+  else if(vTabChN == 'vTabN3') {
+    document.getElementById('fbButton').style.display='none';
+    gbi('messageDiv').style.display='none';
+    gbi('linkedInButton').style.display='';
+    document.getElementById('tweetButton').style.display='none';
+  }
+}
+
+var fields = document.getElementsByName('domainsSpan').length;
+function addMore(){
+  if(fields!=5){
+    fields += 1;
+    if ( gbi('domainTxtSpan'+fields) ) {
+        fields += 100;
+    }
+    document.getElementById('test').innerHTML += '<span id="domainTxtSpan'+fields+'"><label for="domain"><strong>Domain name :</strong></label> <input type="text" class="field" name="domainsSpan" id="domainTxtBox'+fields+'"> <a class="plr7 fl mTop5" href="javascript:;" onclick="addDomain(\''+fields+'\');">Save</a><span class="dispBlk cl p5"></span></span>';
+  }
+  if(document.getElementsByName('domainsSpan').length == 5){
+    gbi('addM').style.display = 'none';
+  }
+}
+
+function showmodalWin(opt){
+  var val = opt.value;
+  if(val == 'cnf'){         
+    modalwin('460','145','newFldr', this);
+  }
+}
+
+function sendEmail(listName, messageBox, fromEmail, action) {
+  try {
+    var emails = document.getElementsByName(listName);
+    var emailIds = "";
+    var url  = gbi('sendEmailUrl').value;
+    var longUrl  = encodeURIComponent(gbi('longJobUrl').value);
+    var from = encodeURIComponent(gbi(fromEmail).value);
+    var title = encodeURIComponent(gbi('jobTitle').value);
+    var urlToBeShared = gbi('urlToBeShared').value;
+    for (var i=0; i< emails.length; i++) {
+      emailIds += trim(emails[i].innerHTML)+", ";
+    }
+    HttpRequestObj = getHTTPObject();
+    var request = "emails="+ emailIds+"&msg="+encodeURIComponent(gbi(messageBox).value)+"&from="+from+"&url="+urlToBeShared+"&title="+title+"&act="+action+"&longUrl="+longUrl+"&jobId="+gbi('jobId').value;
+    HttpRequestObj.open("POST", url, true);
+    HttpRequestObj.setRequestHeader('Content-type','application/x-www-form-urlencoded');
+    HttpRequestObj.setRequestHeader('Content-length', request.length);
+    HttpRequestObj.setRequestHeader('Connection', close);
+    HttpRequestObj.send(request);
+    HttpRequestObj.onreadystatechange = handleSendEmailResponse;
+  }catch(error){alert(error);
+  }
+}
+
+function handleSendEmailResponse() {
+  if(HttpRequestObj.readyState == 4) {
+    if(HttpRequestObj.status == 200) {
+      var responseTxt = trim(HttpRequestObj.responseText);
+      var response = responseTxt.split('|X|');
+      if(response[0] == 'OK') {
+        if(response[1] == 'refer') {
+          gbi('successReferMsgMail').style.display = "";
+          gbi('successReferMsgMail').innerHTML = "Successfully mail sent.";
+        } else {
+          gbi('successShareMsgMail').style.display = "";
+          gbi('successShareMsgMail').innerHTML = "Successfully mail sent.";
+        }
+        scroll(0,0);
+
+      }
+      else {
+        gbi('redtxt').style.display = "";
+        gbi('redtxt').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+      }
+
+    } else {
+      gbi('redtxt').style.display = "";
+      gbi('redtxt').innerHTML = "Sorry, could not process ur request..Kindly try again";
+
+    }
+  }
+  return false;
+}
+
+function selectAllForSN(chkAll, mainlistName, source) {
+  if(source == 'referOutlook') {
+    var selListName = 'referSelectedListContainer';
+    var listName= 'referEmailList';
+    var prefix = 'refer';
+  }
+  else {
+    var selListName = 'selectedListContainer';
+    var listName= 'shareEmailList';
+    var prefix = 'share';
+  }
+  var orgList = new Array;
+  
+  var list = document.getElementsByName(mainlistName);
+  var selectedList = '';
+  for (var i=0; i< list.length; i++) {
+    if(chkAll.checked == true) {
+      selectedList += '<span id="'+prefix+'#'+list[i].value+'"><span class="cls"> <span name="'+listName+'">'+list[i].value+'</span> <a href="javascript:;" onclick="gbi(\''+prefix+'#'+list[i].value+'\').innerHTML = \'\';gbi(\''+prefix+'Chk#'+list[i].value+'\').checked=false;gbi(\''+source+'SelectAll\').checked = false;"><img width="9" hspace="4" height="9" border="0" src="'+imagesUrl+'/cross_small.gif" alt=""></a></span><br /></span>';
+      list[i].checked=true;
+      orgList[i] = list[i].value;
+    } else {
+      list[i].checked=false;
+      gbi(prefix+'#'+list[i].value).style.display = 'none';
+    }
+  }
+  if (chkAll.checked == true) {
+    var alreadySelectedList = document.getElementsByName(listName);
+    for (var i=0; i< alreadySelectedList.length; i++) {
+      var strHtml =  alreadySelectedList[i].innerHTML;
+      if (in_array_sugg(orgList, strHtml) == '-1') {
+        selectedList += '<span id="'+prefix+'#'+strHtml+'"><span class="cls"> <span name="'+listName+'">'+strHtml+'</span> <a href="javascript:;" onclick="gbi(\''+prefix+'#'+strHtml+'\').innerHTML = \'\';gbi(\''+prefix+'Chk#'+strHtml+'\').checked=false;gbi(\''+source+'SelectAll\').checked = false;"><img width="9" hspace="4" height="9" border="0" src="'+imagesUrl+'/cross_small.gif" alt=""></a></span><br /></span>';
+      }
+    }
+    gbi(selListName).innerHTML = selectedList;
+  }
+}
+
+function addInContainer(chkBox, source) {
+  if(source == 'referOutlook') {
+    var selListName = 'referSelectedListContainer';
+    var listName= 'referEmailList';
+    var prefix = 'refer';
+  }
+  else {
+    var selListName = 'selectedListContainer';
+    var listName= 'shareEmailList';
+    var prefix = 'share';
+
+  }
+  var alreadyExists = false;
+  var selectedList = gbi(selListName).innerHTML;
+
+  if(chkBox.checked == true) {
+  if( gbi(prefix+'#'+chkBox.value) ) {
+    if (gbi(prefix+'#'+chkBox.value).innerHTML != '') {
+     alreadyExists = true;
+    }
+  }
+
+  if (alreadyExists == false) {
+    selectedList = '<span id="'+prefix+'#'+chkBox.value+'"><span class="cls"> <span name="'+listName+'">'+chkBox.value+'</span> <a href="javascript:;" onclick="gbi(\''+prefix+'#'+chkBox.value+'\').innerHTML=\'\';gbi(\''+prefix+'Chk#'+chkBox.value+'\').checked=false;gbi(\''+source+'SelectAll\').checked = false;"><img width="9" hspace="4" height="9" border="0" src="'+imagesUrl+'/cross_small.gif" alt=""></a></span><br /></span>'+selectedList;
+    }
+    gbi(selListName).innerHTML = selectedList;
+  }
+  else {
+    gbi(prefix+'#'+chkBox.value).innerHTML = '';
+    gbi(prefix+'#'+chkBox.value).style.display = 'none';
+  }
+}
+
+function removeAllForSN(source) {
+  if(source == 'referOutlook') {
+    var selListName = 'referSelectedListContainer';
+    var listName= 'referEmailList';
+    var prefix = 'refer';
+    gbi('referOutlookSelectAll').checked = false;
+  }
+  else {
+    var selListName = 'selectedListContainer';
+    var listName= 'shareEmailList';
+    var prefix = 'share';
+    gbi('outlookSelectAll').checked = false;
+    gbi('gmailSelectAll').checked = false;
+    gbi('linkedinSelectAll').checked = false;
+  }
+
+  var alreadySelectedList = document.getElementsByName(listName);
+  for (var i=0; i< alreadySelectedList.length; i++) {
+    gbi(prefix+'Chk#'+alreadySelectedList[i].innerHTML).checked = false;
+  }
+  gbi(selListName).innerHTML = '';
+}

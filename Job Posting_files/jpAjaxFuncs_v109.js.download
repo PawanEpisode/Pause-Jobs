@@ -1,0 +1,4203 @@
+function getXmlHttpObject()
+{
+    try{
+        // Opera 8.0+, Firefox, Safari
+        httpObject = new XMLHttpRequest();
+    } catch (e){
+        // Internet Explorer Browsers
+        try{
+            httpObject = new ActiveXObject("Msxml2.XMLHTTP");
+        } catch (e) {
+            try{
+                httpObject = new ActiveXObject("Microsoft.XMLHTTP");
+            } catch (e){
+                // Something went wrong
+                alert("XMLHTTP Not Supported.");
+                return false;
+            }
+        }
+    }
+    return httpObject;
+}
+
+function createTagFromInput(tagCont, tagKey, tagData, mainTagCont) {
+    new createTags({
+        contId: tagCont,
+        key: tagKey,
+        text: tagData,
+        placeTagEnd: true,
+        hiddenTag: mainTagCont.find("input[type='hidden']")
+    });
+    $("#keyword").attr('placeholder', 'Add more Keyword').removeClass('bigField');
+    setTimeout(function(){
+        clearPredictions();
+    },100);
+}
+
+function serviceFailedMessage()
+{
+    alert("Your request could not be processed. Please try again.");
+    return false;
+}
+
+function getUniqueId(id)
+{
+    if(trim(id) == "") {
+        id = document.getElementById("id").value;
+        return id;
+    }
+    else
+        return id;
+}
+
+function getRequestPath()
+{
+    if(document.getElementById('requestPath'))
+        return document.getElementById('requestPath').value;
+}
+
+function autoRefreshJob(sid,cid)
+{
+    //  var id = getUniqueId(id);
+
+    var date=document.getElementById("dateE").value;
+    var fileId = document.getElementById("fileId").value;
+    var refPattern = document.getElementById("refPattern").value;
+    var refDay = document.getElementById("refDay").value;
+    var recurrenceEnd = document.getElementById("recurrenceEnd").value;
+    var refEndValue = document.getElementById("refEndValue").value;
+    var refStartDate = document.getElementById("stDate").value;
+    var rspStat = 0;
+    // the below check s done to know that whether the query has to be insert or UPDATE
+    if (document.getElementById("refType"+fileId).value=="")
+    {
+        var refreshNow=true;
+    }
+    else
+    {
+        var refreshNow=false;
+    }
+    var requestPath = getRequestPath();
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                arrResponse = submitRequest.responseText.split("|XX|");
+
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(submitRequest.responseText == '') {
+                    serviceFailedMessage();
+                }
+                else if(arrResponse[0] == "false"){
+                    rspStat = 0;
+                    document.getElementById('date_err').style.display = document.getElementById('date_err').style.display == "none"?"block":document.getElementById('date_err').style.display;
+                    document.getElementById('date_err').className="error";
+                    document.getElementById('date_err').innerHTML=arrResponse[1];
+                }
+                else if(arrResponse[0] == "greater"){
+                    document.getElementById('date_err').style.display = document.getElementById('date_err').style.display == "none"?"block":document.getElementById('date_err').style.display;
+                    document.getElementById('date_err').className="error";
+                    document.getElementById('date_err').innerHTML=arrResponse[1];
+                    rspStat = 0;
+                }
+                else if(arrResponse[0] == "falseStartDate"){
+                    rspStat = 0;
+                    //            document.getElementById('date_err').style.display = document.getElementById('date_err').style.display == "none"?"block":document.getElementById('date_err').style.display;
+                    //          document.getElementById('date_err').className="error";
+                    //        document.getElementById('date_err').innerHTML=arrResponse[1];
+                }
+
+                else if(arrResponse[0] == "true")
+                {
+                    rspStat = 1;
+                    //          document.getElementById("greenmess").style.display="none";
+                    document.getElementById("cnfrmmsg").style.display="none";
+                    document.getElementById("greenmess").style.display="block";
+                    document.getElementById("greenmessAutoRef").style.display="block";
+                    document.getElementById("confAutoRefresh").innerHTML="The auto refresh frequency has been set successfully to "+refPattern ;
+                    document.getElementById("nxtRef"+fileId).innerHTML=arrResponse[2];
+                    document.getElementById("refDay"+fileId).value=refDay;
+                    document.getElementById("refType"+fileId).value=refPattern;
+                    document.getElementById("refPattern"+fileId).value=recurrenceEnd;
+                    if (recurrenceEnd == "after")
+                    {
+                        document.getElementById("refEndCount"+fileId).value=refEndValue;
+                        document.getElementById("refEndDate"+fileId).value="";
+                    }
+                    else
+                    {
+                        document.getElementById("refEndCount"+fileId).value=""
+                        document.getElementById("refEndDate"+fileId).value=refEndValue;
+                    }
+                    hidemodal();
+                    window.location = "#tagcnfrm";
+
+                }
+
+            }
+        }
+    }
+    //   var queryString = "?id="+ encodeURIComponent(id)+ "&date="+ encodeURIComponent(date)+ "&fileId="+ encodeURIComponent(fileId)+ "&refPattern="+ encodeURIComponent(refPattern)+ "&refDay="+ encodeURIComponent(refDay)+ "&recurrenceEnd="+ encodeURIComponent(recurrenceEnd)+ "&refEndValue="+ encodeURIComponent(refEndValue)+ "&refreshNow="+ encodeURIComponent(refreshNow) ;
+    var queryString = "?date="+ encodeURIComponent(date)+ "&fileId="+ encodeURIComponent(fileId)+ "&refPattern="+ encodeURIComponent(refPattern)+ "&refStartDate="+ encodeURIComponent(refStartDate)+ "&recurrenceEnd="+ encodeURIComponent(recurrenceEnd)+ "&refEndValue="+ encodeURIComponent(refEndValue)+ "&refreshNow="+ encodeURIComponent(refreshNow) ;
+    //document.write(requestPath+"/Job/autoRefresh"+queryString);
+    submitRequest.open("GET", requestPath+"/Job/autoRefresh"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+    return rspStat;
+}
+
+function refreshjob(sid, cid,tab)
+{
+    var checkRefresh= document.getElementById('checkRefreshVal').value;
+    var refStatus = document.getElementById("currentRefStatus").value;
+    var error = false;
+    var id = getUniqueId(id);
+    var date=document.getElementById("dateE").value;
+    var fileId = document.getElementById("fileId").value;
+    var refPattern = document.getElementById("refPattern").value;
+    var recurrenceEnd = document.getElementById("recurrenceEnd").value;
+    var refEndValue = document.getElementById("refEndValue").value;
+    var refStartDate = document.getElementById("stDate").value;
+    var subCategoryId = document.getElementById("subCategoryId").value
+    // the below check s done to know that whether the query has to be insert or UPDATE
+    if (document.getElementById("refType"+fileId).value=="")
+    {
+        var refreshNow=true;
+    }
+    else
+    {
+        var refreshNow=false;
+    }
+
+    if (refStatus=="N")
+    {
+        var rspStat = 0;
+        var requestPath = getRequestPath();
+        // Further Processing
+        var submitRequest = getXmlHttpObject();
+        submitRequest.onreadystatechange = function()
+        {
+            if(submitRequest.readyState == 4)
+            {
+                if(submitRequest.status == 200)
+                {
+                    arrResponse = submitRequest.responseText.split("|XX|");
+                    if(trim(submitRequest.responseText) == "ERROR")
+                    {
+
+                        error = true;
+                        authenticationFailedMsg();
+                        document.getElementById('subRefresh').disabled = false;
+
+                    }
+                    else if(submitRequest.responseText == '')
+                    {
+                        serviceFailedMessage();
+                        error = true;
+                        document.getElementById('subRefresh').disabled = false;
+                    }
+                    else if(trim(arrResponse[0]) == "false")
+                    {
+                        rspStat = 0;
+                        error = true ;
+                        document.getElementById('date_err').style.display ="block";
+                        document.getElementById('date_err').style.display = document.getElementById('date_err').style.display == "none"?"block":document.getElementById('date_err').style.display;
+                        document.getElementById('date_err').innerHTML=arrResponse[1];
+                        document.getElementById('subRefresh').disabled = false;
+                    }
+                    else if(trim(arrResponse[0]) == "greater")
+                    {
+                        error = true;
+                        document.getElementById('date_err').style.display ="block";
+                        document.getElementById('date_err').style.display = document.getElementById('date_err').style.display == "none"?"block":document.getElementById('date_err').style.display;
+                        document.getElementById('date_err').innerHTML=arrResponse[1];
+                        document.getElementById('subRefresh').disabled = false;
+                        rspStat = 0;
+                    }
+                    else if(trim(arrResponse[0]) == "falseStartDate")
+                    {
+                        rspStat = 0;
+                        error = true ;
+                        document.getElementById('st_date_err').style.display ="block";
+                        document.getElementById('st_date_err').style.display = document.getElementById('st_date_err').style.display == "none"?"block":document.getElementById('st_date_err').style.display;
+                        document.getElementById('st_date_err').innerHTML=arrResponse[1];
+                        document.getElementById('subRefresh').disabled = false;
+                    }
+                    else if(trim(arrResponse[0]) == "falseLessStartDate")
+                    {
+                        rspStat = 0;
+                        error = true ;
+                        document.getElementById('st_date_err').style.display ="block";
+                        document.getElementById('st_date_err').style.display = document.getElementById('st_date_err').style.display == "none"?"block":document.getElementById('st_date_err').style.display;
+                        document.getElementById('st_date_err').innerHTML=arrResponse[1];
+                        document.getElementById('subRefresh').disabled = false;
+                    }
+                    else if (trim(arrResponse[0]) == "falseLessEndDate")
+                    {
+                        rspStat = 0;
+                        error=true;
+                        document.getElementById('st_date_err').style.display="block";
+                        document.getElementById('st_date_err').style.display = document.getElementById('st_date_err').style.display == "none"?"block":document.getElementById('st_date_err').style.display;
+                        document.getElementById('st_date_err').innerHTML=arrResponse[1];
+                        document.getElementById('subRefresh').disabled = false;
+                    }
+                    else if(trim(arrResponse[0]) == "true")
+                    {
+                        error=false;
+                        rspStat = 1;
+                        //          document.getElementById("greenmess").style.display="none";
+                        document.getElementById("cnfrmmsg").style.display="none";
+                        document.getElementById("greenmess").style.display="block";
+                        document.getElementById("greenmessAutoRef").style.display="block";
+                        document.getElementById("confAutoRefresh").innerHTML="The auto refresh frequency has been set successfully to "+refPattern ;
+                        document.getElementById("nxtRef"+fileId).innerHTML=arrResponse[2];
+                        document.getElementById("refStartDate"+fileId).value=refStartDate;
+                        document.getElementById("refType"+fileId).value=refPattern;
+                        document.getElementById("refPattern"+fileId).value=recurrenceEnd;
+                        if (recurrenceEnd == "after")
+                        {
+                            document.getElementById("refEndCount"+fileId).value=refEndValue;
+                            document.getElementById("refEndDate"+fileId).value="";
+                        }
+                        else
+                        {
+                            document.getElementById("refEndCount"+fileId).value=""
+                            document.getElementById("refEndDate"+fileId).value=refEndValue;
+                        }
+                        hidemodal();
+                        window.location = "#tagcnfrm";
+                    }
+
+                }
+                var deleteAutoRef=0;
+                if (checkRefresh=="Y" && error==false  )
+                {
+                    document.frmJobListing.action = devJPListing + "/Job/refresh?sessionId="+sid+"&companyId="+cid+"&deleteAutoRef="+deleteAutoRef+"&refType="+refPattern+"&refStartDate="+refStartDate+"&recurrenceEnd="+recurrenceEnd+"&refEndValue="+refEndValue+"&subCategoryId="+subCategoryId+"&tab="+tab;
+                    document.frmJobListing.method = "post";
+                    document.frmJobListing.submit();
+                }
+            }
+        }
+        //   var queryString = "?id="+ encodeURIComponent(id)+ "&date="+ encodeURIComponent(date)+ "&fileId="+ encodeURIComponent(fileId)+ "&refPattern="+ encodeURIComponent(refPattern)+ "&refDay="+ encodeURIComponent(refDay)+ "&recurrenceEnd="+ encodeURIComponent(recurrenceEnd)+ "&refEndValue="+ encodeURIComponent(refEndValue)+ "&refreshNow="+ encodeURIComponent(refreshNow) ;
+
+        var queryString = "?date="+ encodeURIComponent(date)+ "&fileId="+ encodeURIComponent(fileId)+ "&refPattern="+ encodeURIComponent(refPattern)+ "&refStartDate="+ encodeURIComponent(refStartDate)+ "&recurrenceEnd="+ encodeURIComponent(recurrenceEnd)+ "&refEndValue="+ encodeURIComponent(refEndValue)+ "&refreshNow="+ encodeURIComponent(refreshNow) ;
+        //  document.write(requestPath+"/Job/autoRefresh"+queryString);
+        submitRequest.open("GET", requestPath+"/Job/autoRefresh"+queryString, true);
+        submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        submitRequest.send(null);
+        temp=rspStat;
+        //    return rspStat;
+
+    }
+
+    // this flag of deleteAutoRef is introduced so as to remove the entries from autorefresh in case a user removes the scheduling and clicks on refresh now
+    else if ( refStatus=="Y" )
+    {
+        var deleteAutoRef=0;
+        if (refreshNow=="1")
+            deleteAutoRef = 0;
+        else
+            deleteAutoRef = 1;
+
+        document.frmJobListing.action="../Job/refresh?sessionId="+sid+"&companyId="+cid+"&deleteAutoRef="+deleteAutoRef+"&refType="+refPattern+"&refStartDate="+refStartDate+"&recurrenceEnd="+recurrenceEnd+"&refEndValue="+refEndValue+"&jobId="+fileId+"&subCategoryId="+subCategoryId+"&tab="+tab;
+        //document.location = devJPListing + "/Job/refresh?sessionId="+sid+"&companyId="+cid+"&deleteAutoRef="+deleteAutoRef+"&refType="+refPattern+"&refStartDate="+refStartDate+"&recurrenceEnd="+recurrenceEnd+"&refEndValue="+refEndValue+"&jobId="+fileId;
+        document.frmJobListing.method = "post";
+        //alert(document.frmJobListing.action);
+        document.frmJobListing.submit();
+    }
+}
+
+function refreshmultijob(sid,cid,tab)
+{
+    var deleteAutoRef=0;
+    var fileId = document.getElementById("jobId").value;
+    var subCategoryId = document.getElementById("subCategoryId").value;
+
+    document.frmJobListing.action = devJPListing + "/Job/multiRefresh?sessionId="+sid+"&companyId="+cid+"&tab="+tab;
+    document.frmJobListing.method = "post";
+    document.frmJobListing.submit();
+}
+
+function referral(sid,cid,tab)
+{
+    var fileId = document.getElementById("jobId").value;
+    var subCategoryId = document.getElementById("subCategoryId").value;
+    document.frmJobListing.action = devJPListing + "/referral/new?sessionId="+sid+"&companyId="+cid+"&tab="+tab;
+    document.frmJobListing.method = "post";
+    document.frmJobListing.submit();
+}
+
+function validateReferral(fmobj,jobArr){
+    var arr= JSON.parse(jobArr);
+    var fmobj = document.frmJobListing;
+    var TotalBoxes = 0;
+    var TotalOn = 0;
+    var arrSelectedID = new Array();
+    for (var i=0;i<fmobj.elements.length;i++) {
+        var e = fmobj.elements[i];
+        if (e.type=='checkbox' && e.getAttribute("checkAllGroup") == 1) {
+            if(e.checked == true)
+                arrSelectedID.push(fmobj.elements[i].value);
+        }
+    }
+
+    if(arrSelectedID.length > 5){
+        document.getElementById('errormess').style.display='block';
+        document.getElementById('error_delete').innerHTML='You can not refer more than 5 jobs at a time';
+        return false;
+    }
+    else if(arrSelectedID.length==0){
+        document.getElementById('errormess').style.display='block';
+        document.getElementById('error_delete').innerHTML='Please select atleast 1 job to refer.';
+        return false;
+    }
+
+    return true;
+
+}
+function addAdditionalFarea(id)
+{
+    var id = getUniqueId(id);
+    var farealbl = document.getElementById('id_farealbl').value;
+    var compid = document.getElementById('companyId').value;
+    var requestPath = getRequestPath();
+    var tempErr = "";
+    // Validate
+    if(trim(farealbl) == "")
+    {
+        tempErr = "Please specify Functional Area Label. <br />";
+    }
+    else if(testHtmTag(trim(farealbl), false) == true){
+        tempErr = 'HTML tags are not supported in this field. <br />';
+    }
+    else if (trim(farealbl).length > 100)
+    {
+        tempErr = "The suggested Functional area cannot be more than 100 characters.<br />";
+    }
+    if(tempErr.length > 0)
+    {
+        document.getElementById('id_farealbl').className = "errorfill";
+        document.getElementById('farealbl_err').style.display = "block";
+        document.getElementById('farealbl_err').innerHTML = tempErr;
+        document.getElementById('farealbl_err').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('id_farealbl').className = "";
+        document.getElementById('farealbl_err').style.display = "none";
+        document.getElementById('farealbl_err').innerHTML = "";
+    }
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(trim(submitRequest.responseText) == "notAdded")
+                {
+                    SetMsg('farea');
+                    document.getElementById("msg_farea").style.display = "block";
+                    document.getElementById("msg_farea").innerHTML = "There was an error while adding the functional area. Please try again.";
+                    document.getElementById('id_farealbl').value="";
+                }
+                else //if(submitRequest.responseText == "added")
+                {
+                    SetMsg('farea');
+                    document.getElementById("msg_farea").style.display = "block";
+                    document.getElementById("msg_farea").innerHTML = "Thank you for your valuable feedback.<br>Naukri.com team will evaluate and get it incorporated if needed.";
+                    document.getElementById('id_farealbl').value="";
+                    focuschangeNew2('sugfunctionallayer');
+                }
+            }
+        }
+    }
+    var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&farealbl=" + encodeURIComponent(farealbl);
+    if(insta && newInstaUser)
+        queryString = queryString + "&insta="+insta+"newInstaUser="+newInstaUser;
+    submitRequest.open("GET", requestPath+"/Job/addFarea"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function addAdditionalIndType(id)
+{
+    var id = getUniqueId(id);
+    var indlbl = document.getElementById('id_indlbl').value;
+    var compid = document.getElementById('companyId').value;
+    var requestPath = getRequestPath();
+    var tempErr = '';
+    // Validate
+    if(trim(indlbl) == "")
+    {
+        tempErr = "Please specify Industry Type Label. <br />";
+    }
+    else if(testHtmTag(trim(indlbl), false) == true){
+        tempErr = 'HTML tags are not supported in this field. <br />';
+    }
+    else if (trim(indlbl).length > 100)
+    {
+        tempErr = "The suggested Industry Type cannot be more than 100 characters.<br />";
+    }
+
+    if(tempErr.length > 0)
+    {
+        document.getElementById('id_indlbl').className = "errorfill";
+        document.getElementById('indlbl_err').style.display = "block";
+        document.getElementById('indlbl_err').innerHTML = tempErr;
+        document.getElementById('indlbl_err').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('id_indlbl').className = "";
+        document.getElementById('indlbl_err').style.display = "none";
+        document.getElementById('indlbl_err').innerHTML = "";
+    }
+
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(trim(submitRequest.responseText) == "notAdded")
+                {
+                    SetMsg('ind');
+                    document.getElementById("msg_ind").style.display = "block";
+                    document.getElementById("msg_ind").innerHTML = "There was an error while adding the Industry Type. Please try again.";
+                    document.getElementById('id_indlbl').value = "";
+                }
+                else //if (submitRequest.responseText == "added")
+                {
+                    SetMsg('ind');
+                    document.getElementById("msg_ind").style.display = "block";
+                    document.getElementById("msg_ind").innerHTML = "Thank you for your valuable feedback.<br>Naukri.com team will evaluate and get it incorporated if needed.";
+                    document.getElementById('id_indlbl').value="";
+                    focuschangeNew2('sugindustry');
+                }
+            }
+            else
+                serviceFailedMessage();
+        }
+    }
+    var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&indlbl=" + encodeURIComponent(indlbl);
+    if(insta && newInstaUser)
+        queryString = queryString + "&insta="+insta+"newInstaUser="+newInstaUser;
+    submitRequest.open("GET", requestPath+"/Job/addIndType"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function setDisplayTemplate(id, module)
+{
+    if(module == "Online")
+    {
+        var id = getUniqueId(id);
+    }
+    var sessionId = document.getElementById('id_sessionid').value;
+    var subCategoryId = document.getElementById('id_subCategoryId').value;
+    var pageId = document.getElementById('id_PageId').value;
+    var companyId = document.getElementById('id_companyId').value;
+    var requestPath = getRequestPath();
+    var template = document.getElementById('id_PrevTemplate').value;
+    if(template == -1000)
+    {
+        alert("Please select a template\n");
+        return false;
+    }
+
+    var submitRequest=getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                if(trim(submitRequest.responseText) == "ERROR")
+                {
+                    if(module == "Online")
+                    {
+                        authenticationFailedMsg();
+                    }
+                }
+                else
+                {
+                    try{
+                        document.getElementById('id_template').innerHTML=submitRequest.responseText;
+                    } catch(e){}
+
+                }
+            }
+            else
+                serviceFailedMessage();
+            document.getElementById('Preview').disabled = false;
+        }
+    }
+    var rndNumber = Math.random();
+    var queryString = "?id="+encodeURIComponent(id)+"&companyId="+encodeURIComponent(companyId)+"&sessionId="+encodeURIComponent(sessionId)+"&subCategoryId="+encodeURIComponent(subCategoryId)+"&pageId="+encodeURIComponent(pageId)+"&template="+encodeURIComponent(template)+"&rndNumber="+rndNumber;
+    if(module == "Online")
+    {
+        submitRequest.open("GET", requestPath+"/Job/displayTemplates"+queryString, true);
+    }
+    else if (module == "Offline")
+    {
+        submitRequest.open("GET", devOffpath+"/Single/displayTemplates"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function addNewEmail(id, module)
+{
+    var id = getUniqueId(id);
+    var emaillbl = document.getElementById('id_emaillbl').value;
+    var compid = document.getElementById('companyId').value;
+    var subcatid = document.getElementById('subCategoryId').value;
+    var jobId = document.getElementById('jobId').value;
+    var requestPath = getRequestPath();
+    var errmsg = '';
+
+    var EmailRegEx = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    expressionReg = new RegExp(EmailRegEx);
+    // Validate
+    if(trim(emaillbl) == "")
+    {
+        errmsg = "Please specify an email address.";
+        //return false;
+    }
+    else if(!validateEmailAddr(emaillbl))
+    {
+        errmsg = "Please enter a valid email address.";
+        //return false;
+    }
+    else if (emaillbl.length > 50)
+    {
+        errmsg = "The email address cannot be more than 50 characters.";
+    }
+    else if (!expressionReg.test(emaillbl))
+    {
+        errmsg = "Please enter a valid email address";
+    }
+    var emailElm = document.getElementById('email');
+    for(i=0; i<emailElm.length; i++)
+    {
+        if (emaillbl && emailElm.options[i].innerHTML && (emaillbl).toLowerCase() == emailElm.options[i].innerHTML.toLowerCase())
+        {
+            document.getElementById("id_emaillbl").className="errorfill";
+            document.getElementById("emaillbl_err").style.display="block";
+            document.getElementById("emaillbl_err").innerHTML = "This email address: " + emaillbl +" already exists.";
+            document.getElementById('emaillbl_err').className = "error";
+            return false;
+        }
+    }
+
+    if(errmsg != '')
+    {
+        //emaillbl.focus();
+        document.getElementById('id_emaillbl').className = 'errorfill';
+        document.getElementById('emaillbl_err').style.display = 'block';
+        document.getElementById('emaillbl_err').innerHTML = errmsg;
+        document.getElementById('emaillbl_err').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('id_emaillbl').className = '';
+        document.getElementById('emaillbl_err').style.display = 'none';
+        document.getElementById('emaillbl_err').innerHTML = '';
+    }
+
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                document.getElementById('id_EmailBtn').disabled = false;
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(submitRequest.responseText == "notAdded")
+                {
+                    SetMsg('email');
+                    document.getElementById("msg_email").style.display = "block";
+                    document.getElementById("msg_email").innerHTML = "<div style='text-align:center' class='redtxt'> There was an error while adding the email address. Please try again.</div>";
+                    document.getElementById('id_emaillbl').value="";
+                    focuschangeNew2('addEmail');
+                }
+                else if(submitRequest.responseText == "subscriptionExpired")
+                {
+                    SetMsg('email');
+                    document.getElementById("msg_email").style.display = "block";
+                    document.getElementById("msg_email").innerHTML = "<div style='text-align:center' class='redtxt'> Since your subscription has expired we cannot process this request.</div>";
+                    document.getElementById('id_emaillbl').value="";
+                    focuschangeNew2('addEmail');
+                }else if (trim(submitRequest.responseText) == "duplicateEmail") {
+                    SetMsg('email');
+                    document.getElementById(confMsgId).style.display = "block";
+                    document.getElementById(confMsgId).innerHTML = "<div class='redtxt'> This email address: " + emaillbl +" already exists.</div>";
+                    document.getElementById(emailId).value="";
+                }
+                else //if (submitRequest.responseText == "added")
+                {
+                    var newSelOption = document.createElement('option');
+                    newSelOption.setAttribute('value', emaillbl);
+                    newSelOption.innerHTML = emaillbl;
+
+                    if(document.getElementById('autoFwdEmail'))
+                    {
+                        ObjAutoFwd = document.getElementById('autoFwdEmail');
+                        ObjAutoFwd.appendChild(newSelOption);
+                    }
+
+                    var newSelOption1 = document.createElement('option');
+                    newSelOption1.setAttribute('value', emaillbl);
+                    newSelOption1.innerHTML = emaillbl;
+                    if(document.getElementById('email'))
+                    {
+                        ObjEmailSel = document.getElementById('email');
+                        ObjEmailSel.appendChild(newSelOption1);
+                    }
+
+                    SetMsg('email');
+                    document.getElementById("msg_email").style.display = "block";
+                    document.getElementById("msg_email").innerHTML = "<div style='text-align:center'> The email address would be added against the company.</div>";
+                    document.getElementById('id_emaillbl').value="";
+                    focuschangeNew2('addEmail');
+                }
+            }
+            else
+                serviceFailedMessage();
+        }
+    }
+    var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&emaillbl=" + encodeURIComponent(emaillbl)+"&subCategoryId=" +encodeURIComponent(subcatid);
+    if(jobId !== undefined && jobId != null && jobId.length > 0)
+    {
+        queryString = queryString + "&jobId=" + jobId;
+    }
+    if(module == "Online")
+        submitRequest.open("GET", requestPath+"/Job/addNewEmail"+queryString, true);
+    else if(module == "Offline")
+        submitRequest.open("GET", devOffpath+"/addNewEmail"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    document.getElementById('id_EmailBtn').disabled = true;
+    submitRequest.send(null);
+}
+
+function addDropDownElement(objId, objDivApp, objInpApp, objValApp, htmlVal)
+{
+    var newLI = document.createElement('li');
+    var newInput = document.createElement('input');
+    var newDiv = document.createElement('div');
+    newInput.setAttribute('type','checkbox');
+    newInput.setAttribute('name','email');
+    newInput.setAttribute('class','left');
+    newInput.setAttribute('id',objInpApp+htmlVal);
+    newInput.setAttribute('value',htmlVal);
+    newDiv.setAttribute('id',objDivApp+htmlVal);
+    newLI.appendChild(newInput);
+    newLI.appendChild(newDiv);
+    objUL = document.getElementById(objId);
+    if(objUL) {
+        objUL.appendChild(newLI);
+        document.getElementById(objDivApp+htmlVal).innerHTML = htmlVal;
+        document.getElementById(objDivApp+htmlVal).className = "right";
+        document.getElementById(objInpApp+htmlVal).onclick = function() {showSelectedValue(objInpApp+htmlVal, 'emaildisp');};
+    }
+}
+function hideMsg(labelname) {
+    document.getElementById(labelname).style.display="none";
+}
+
+function clearAddressLayer()
+{
+
+    var arrError = ['lbl_err', 'addnewerr', 'cityerr', 'addstateerr', 'addpinerr', 'countryerr', 'conterr'];
+
+    for (i=0; i < arrError.length; i++)
+    {
+        document.getElementById(arrError[i]).innerHTML="";
+        document.getElementById(arrError[i]).className = "error";
+        document.getElementById(arrError[i]).style.display='none';
+    }
+
+    var arrEmptyClassName = ['id_addrlbl', 'addnew', 'lblname2', 'lblname3', 'id_city', 'txt_addOthrcity', 'addstate', 'addpin', 'id_country', 'addstd', 'lblname4', 'lblname42'];
+
+    for (j = 0; j < arrEmptyClassName.length; j++)
+    {
+        document.getElementById(arrEmptyClassName[j]).className="";
+    }
+}
+
+function addNewAddress(id, module)
+{
+    var id = getUniqueId(id);
+    var INDIACODE = document.getElementById('INDIACODE').value;
+    var compid = document.getElementById('companyId').value;
+    var subcat = document.getElementById('subCategoryId').value;
+    var requestPath = getRequestPath();
+    var StateRegEx = "^[a-zA-Z .]+$" ;
+    expressionReg = new RegExp(StateRegEx);
+    var NumRegEx = "^[0-9]*$";
+    Numexpression = new RegExp(NumRegEx);
+    var AlphaNumRegEx = "^[ 0-9a-zA-Z]*$";
+    AlphaNumexpression = new RegExp(AlphaNumRegEx);
+
+
+    clearAddressLayer();
+
+    var lblname = trim(document.getElementById('id_addrlbl').value);
+    var NewAddress1 = trim(document.getElementById('addnew').value);
+    var NewAddress2 = trim(document.getElementById('lblname2').value);
+    var NewAddress3 = trim(document.getElementById('lblname3').value);
+
+    var cityAdd = document.getElementById('id_city').value;
+    var otherCity = trim(document.getElementById('txt_addOthrcity').value);
+
+    var NewState = trim(document.getElementById('addstate').value);
+    //  var otherState = trim(document.getElementById('txt_addOthrstate').value);
+    var NewCountry = document.getElementById('id_country').value;
+    if (NewCountry == INDIACODE)
+        var NewPinCode = trim(document.getElementById('pincodeSel').value);
+    else
+        var NewPinCode = trim(document.getElementById('addpin').value);
+
+    var NewCountryCode = trim(document.getElementById('lblname4').value);
+    var NewStateCode = trim(document.getElementById('addstd').value);
+    var NewPhNumber = trim(document.getElementById('lblname42').value);
+    var countryToSave = document.getElementById('id_country').options[document.getElementById('id_country').selectedIndex].innerHTML;
+
+// HTML CHECKS
+    if(testHtmTag(trim(lblname), false) == true){
+        document.getElementById("id_addrlbl").className="errorfill";
+        document.getElementById("lbl_err").style.display="block";
+        document.getElementById("lbl_err").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('lbl_err').className = "error";
+        return false;
+    }
+    if (lblname == ''){
+        document.getElementById("id_addrlbl").className="errorfill";
+        document.getElementById("lbl_err").style.display="block";
+        document.getElementById("lbl_err").innerHTML="This field can not be left blank.";
+        document.getElementById('lbl_err').className = "error";
+        return false;
+    }
+    else if (lblname.length > 80){
+        document.getElementById("id_addrlbl").className="errorfill";
+        document.getElementById("lbl_err").style.display="block";
+        document.getElementById("lbl_err").innerHTML="You have exceeded the maximum limit of 80 characters.";
+        document.getElementById('lbl_err').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById("id_addrlbl").className="";
+        document.getElementById("lbl_err").style.display="none";
+        document.getElementById("lbl_err").innerHTML="";
+        document.getElementById('lbl_err').className = "error";
+    }
+
+//HTML CHECK
+    if(testHtmTag(trim(NewAddress1), false)){
+        document.getElementById("addnew").className="errorfill";
+        document.getElementById("addnewerr").style.display="block";
+        document.getElementById("addnewerr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('addnewerr').className = "error";
+        return false;
+    }
+
+//HTML CHECK
+    if(testHtmTag(trim(NewAddress2), false)){
+        document.getElementById("lblname2").className="errorfill";
+        document.getElementById("addnewerr").style.display="block";
+        document.getElementById("addnewerr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('addnewerr').className = "error";
+        return false;
+    }
+
+//HTML CHECK
+    if(testHtmTag(trim(NewAddress3), false)){
+        document.getElementById("lblname3").className="errorfill";
+        document.getElementById("addnewerr").style.display="block";
+        document.getElementById("addnewerr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('addnewerr').className = "error";
+        return false;
+    }
+
+//HTML CHECK
+    if(testHtmTag(trim(otherCity), false)){
+        document.getElementById("txt_addOthrcity").className="errorfill";
+        document.getElementById("ocityerr").style.display="block";
+        document.getElementById("ocityerr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('ocityerr').className = "error";
+        return false;
+    }
+//HTML CHECK
+    if(testHtmTag(trim(NewPinCode), false)){
+        document.getElementById("addpin").className="errorfill";
+        document.getElementById("addpinerr").style.display="block";
+        document.getElementById("addpinerr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('addpinerr').className = "error";
+        return false;
+    }
+//HTML CHECK
+    if(testHtmTag(trim(NewPhNumber), false)){
+        document.getElementById("lblname42").className="errorfill";
+        document.getElementById("conterr").style.display="block";
+        document.getElementById("conterr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+//HTML CHECK
+    if(testHtmTag(trim(NewCountryCode), false)){
+        document.getElementById("addstd").className="errorfill";
+        document.getElementById("conterr").style.display="block";
+        document.getElementById("conterr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+//HTML CHECK
+    if(testHtmTag(trim(NewStateCode), false)){
+        document.getElementById("lblname4").className="errorfill";
+        document.getElementById("conterr").style.display="block";
+        document.getElementById("conterr").innerHTML="HTML tags are not supported in this field.";
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+    for(i=0; i<document.getElementById('address').length; i++)
+    {
+        if (document.getElementById("id_addrlbl").value == document.getElementById('address').options[i].innerHTML)
+        {
+            document.getElementById("id_addrlbl").className="errorfill";
+            document.getElementById("lbl_err").style.display="block";
+            document.getElementById("lbl_err").innerHTML = "A Label by the same name already exists. Please specify another Label. ";
+            document.getElementById('lbl_err').className = "error";
+            return false;
+        }
+    }
+
+    var errMsgAdd = '';
+    if (NewAddress1 == '')
+    {
+        errMsgAdd ="This field can not be left blank.";
+
+    }
+    else if(NewAddress1.length > 125 || NewAddress2.length > 125 || NewAddress3.length > 125)
+    {
+        errMsgAdd = "You have exceeded the maximum limit of 125 characters.";
+    }
+    if(errMsgAdd)
+    {
+        document.getElementById('addnew').className = 'errorfill';
+        document.getElementById('lblname2').className = 'errorfill';
+        document.getElementById('lblname3').className = 'errorfill';
+        document.getElementById('addnewerr').style.display = 'block';
+        document.getElementById('addnewerr').innerHTML = errMsgAdd;
+        document.getElementById('addnewerr').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('addnew').className='';
+        document.getElementById('lblname2').className='';
+        document.getElementById('lblname3').className='';
+        document.getElementById('addnewerr').style.display='none';
+        document.getElementById('addnewerr').innerHTML='';
+    }
+
+    errMsgAdd='';
+
+    if(cityAdd == '-1' && NewCountry==INDIACODE)
+    {
+        errMsgAdd = "Please select an option from the list.";
+    }
+
+    if(cityAdd == '-1' && NewCountry!=INDIACODE)
+    {
+        if(otherCity != '')
+        {
+            if(otherCity.length > 100)
+            {
+                errMsgAdd = "You have exceeded the maximum limit of 100 characters for Other City value." ;
+                document.getElementById('id_city').className = 'errorfill';
+                document.getElementById('txt_addOthrcity').className = 'errorfill';
+                document.getElementById('ocityerr').style.display = 'block';
+                document.getElementById('ocityerr').innerHTML = errMsgAdd;
+                document.getElementById('ocityerr').className = "error";
+                return false;
+            }
+            else if (!expressionReg.test(otherCity))
+            {
+                errMsgAdd = "Please specify a valid Other City. Use only Alphabets (A-Z, a-z), Dot(.) or Space.";
+                document.getElementById('id_city').className = 'errorfill';
+                document.getElementById('txt_addOthrcity').className = 'errorfill';
+                document.getElementById('ocityerr').style.display = 'block';
+                document.getElementById('ocityerr').innerHTML = errMsgAdd;
+                document.getElementById('ocityerr').className = "error";
+                return false;
+            }
+        }
+        else
+        {
+            document.getElementById('id_city').className = 'errorfill';
+            document.getElementById('txt_addOthrcity').className = 'errorfill';
+            document.getElementById('ocityerr').style.display = 'block';
+            document.getElementById('ocityerr').innerHTML = 'This field can not be left blank.';
+            document.getElementById('ocityerr').className = "error";
+            return false;
+        }
+        cityToSave = otherCity;
+    }
+    else
+        cityToSave = document.getElementById('id_city').value;
+
+    if(errMsgAdd)
+    {
+        document.getElementById('id_city').className='errorfill';
+        document.getElementById('txt_addOthrcity').className = 'errorfill';
+        document.getElementById('cityerr').style.display='block';
+        document.getElementById('cityerr').innerHTML=errMsgAdd;
+        document.getElementById('cityerr').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('id_city').className='';
+        document.getElementById('txt_addOthrcity').className = '';
+        document.getElementById('cityerr').style.display='none';
+        document.getElementById('cityerr').innerHTML='';
+    }
+
+    if(NewState=='-1' && NewCountry==INDIACODE)
+    {
+        document.getElementById('addstate').className='errorfill';
+        document.getElementById('addstateerr').style.display='block';
+        document.getElementById('addstateerr').innerHTML='This field can not be left blank.';
+        document.getElementById('addstateerr').className = "error";
+        return false;
+    }
+    else if (NewState.length > 100 )
+    {
+        document.getElementById('addstate').className = 'errorfill';
+        document.getElementById('addstateerr').style.display = 'block';
+        document.getElementById('addstateerr').innerHTML = 'You have exceeded the maximum limit of 100 characters.';
+        document.getElementById('addstateerr').className = "error";
+        return false;
+    }
+    /*
+     else if (!expressionReg.test(NewState))
+     {
+     document.getElementById('addstate').className = 'errorfill';
+     document.getElementById('addstateerr').style.display = 'block';
+     document.getElementById('addstateerr').innerHTML = 'Please enter only alphabets values.';
+     document.getElementById('addstateerr').className = "error";
+     return false;
+     }
+     */
+    else
+    {
+        document.getElementById('addstate').className='';
+        document.getElementById('addstateerr').style.display='none';
+        document.getElementById('addstateerr').innerHTML='';
+    }
+    if (NewPinCode == '')
+    {
+        document.getElementById('addpin').className='errorfill';
+        document.getElementById('addpinerr').style.display='block';
+        document.getElementById('addpinerr').innerHTML='This field can not be left blank.';
+        document.getElementById('addpinerr').className = "error";
+        return false;
+    }
+    else if ((!Numexpression.test(NewPinCode) && NewCountry == INDIACODE) || (!AlphaNumexpression.test(NewPinCode)))
+    {
+        document.getElementById('addpin').className='errorfill';
+        document.getElementById('addpinerr').style.display='block';
+        if (NewCountry == INDIACODE) {
+            document.getElementById('addpinerr').innerHTML = 'Please enter only numeric values.';
+        } else {
+            document.getElementById('addpinerr').innerHTML = 'Pincode should contain alphabets and digits only. Please retype.';
+        }
+        document.getElementById('addpinerr').className = "error";
+        return false;
+    }
+    else if (NewPinCode.length > 20 )
+    {
+        document.getElementById('addpin').className='errorfill';
+        document.getElementById('addpinerr').style.display='block';
+        document.getElementById('addpinerr').innerHTML = 'You have exceeded the maximum limit of 20 characters.';
+        document.getElementById('addpinerr').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('addpin').className='';
+        document.getElementById('addpinerr').innerHTML='';
+        document.getElementById('addpinerr').style.display='none';
+    }
+
+    if(NewCountry=='')
+    {
+        document.getElementById('id_country').className='errorfill';
+        document.getElementById('countryerr').style.display='block';
+        document.getElementById('countryerr').innerHTML='Please select an option from the list.';
+        document.getElementById('countryerr').className = "error";
+        return false;
+    }
+    else
+    {
+        document.getElementById('id_country').className='';
+        document.getElementById('countryerr').innerHTML='';
+        document.getElementById('countryerr').style.display='none';
+
+    }
+    var CompleteNumber = NewCountryCode + NewStateCode + NewPhNumber ;
+
+    if(trim(NewPhNumber) == "")
+    {
+        document.getElementById('addstd').className = 'errorfill';
+        document.getElementById('lblname4').className = 'errorfill';
+        document.getElementById('lblname42').className = 'errorfill';
+        document.getElementById('conterr').style.display = 'block';
+        document.getElementById('conterr').innerHTML = 'This field can not be left blank.';
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+
+    retMsg = validateContNo(CompleteNumber, true);
+    ArrRetMsg = retMsg.split(":");
+
+    if(trim(ArrRetMsg[1]) == "")
+    {
+        document.getElementById('addstd').className='';
+        document.getElementById('lblname4').className='';
+        document.getElementById('lblname42').className='';
+        document.getElementById('conterr').style.display='none';
+        document.getElementById('conterr').innerHTML='';
+    }
+    else
+    {
+        document.getElementById('addstd').className='errorfill';
+        document.getElementById('lblname4').className='errorfill';
+        document.getElementById('lblname42').className='errorfill';
+        document.getElementById('conterr').style.display='block';
+        document.getElementById('conterr').innerHTML='Please input a valid Phone Number(Only Numeric).';
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+
+    if(NewCountryCode != "" && NewCountryCode.length > 4)
+    {
+        document.getElementById('addstd').className = 'errorfill';
+        document.getElementById('conterr').style.display = 'block';
+        document.getElementById('conterr').innerHTML = 'You have exceeded the maximum limit of 40 characters.';
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+    else if (NewStateCode != "" && NewStateCode.length > 6 )
+    {
+        document.getElementById('lblname4').className = 'errorfill';
+        document.getElementById('conterr').style.display = 'block';
+        document.getElementById('conterr').innerHTML = 'You have exceeded the maximum limit of 6 characters.';
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+    else if (NewPhNumber != "" && NewPhNumber.length > 30)
+    {
+        document.getElementById('lblname42').className = 'errorfill';
+        document.getElementById('conterr').style.display = 'block';
+        document.getElementById('conterr').innerHTML = 'You have exceeded the maximum limit of 30 characters.';
+        document.getElementById('conterr').className = "error";
+        return false;
+    }
+
+    if (cityAdd=="-1")
+        var newCityToSave ="";
+    else
+        var newCityToSave =  document.getElementById('id_city')[document.getElementById('id_city').selectedIndex].innerHTML;
+
+
+    if (NewState=="-1")
+        var newNewState ="";
+    else
+        var newNewState =  document.getElementById('addstate')[document.getElementById('addstate').selectedIndex].innerHTML;
+
+    if(otherCity!='')
+        newCityToSave=otherCity;
+
+
+    completeAdd='';
+    if(NewAddress1!=''){
+        completeAdd += NewAddress1 + ", " ;
+    }
+    if(NewAddress2!=''){
+        completeAdd += NewAddress2 + ", ";
+    }
+
+    if(NewAddress3!=''){
+        completeAdd +=NewAddress3 + ", ";
+    }
+
+
+    completeAdd += newCityToSave + ", " + newNewState + " - " + NewPinCode + "," + countryToSave + "|";
+
+    completeAdd += NewPhNumber;
+
+
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                ArrResponseTxt = submitRequest.responseText.split("|xx|");
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(ArrResponseTxt[1] == "false")
+                {
+                    SetMsg('address');
+                    document.getElementById("msg_address").style.display = 'block';
+                    document.getElementById("msg_address").innerHTML = "<div style='text-align:center' class='redtxt'>" +ArrResponseTxt[2]+ "</div>";
+                }
+                else
+                {
+                    completeAdd = ArrResponseTxt[3] + "#" + completeAdd;
+                    var newSelOption = document.createElement('option');
+                    newSelOption.setAttribute('value', completeAdd );
+                    newSelOption.innerHTML = document.getElementById('id_addrlbl').value;
+
+                    ObjAddAddrs = document.getElementById('address');
+                    ObjAddAddrs.appendChild(newSelOption);
+
+                    SetMsg('address');
+                    document.getElementById("msg_address").style.display = 'block';
+                    document.getElementById("msg_address").innerHTML = "<div style='text-align:center'> The address has been successfully saved.</div>";
+                }
+                document.getElementById('id_addrlbl').value = "";
+                document.getElementById('addnew').value = "";
+                document.getElementById('lblname3').value = "";
+                document.getElementById('lblname2').value = "";
+                document.getElementById('id_city').value = "";
+                document.getElementById('addstate').value = "";
+                document.getElementById('addpin').value = "";
+                document.getElementById('id_country').value = "";
+                document.getElementById('addstd').value = "";
+                document.getElementById('lblname4').value = "";
+                document.getElementById('lblname42').value = "";
+                document.getElementById('txt_addOthrcity').value = "";
+                focuschangeNew2('aeAddress');
+            }
+            else
+                serviceFailedMessage();
+        }
+    }
+    //  var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&label=" + encodeURIComponent(lblname)+"&city="+encodeURIComponent(document.getElementById('id_city').options[document.getElementById('id_city').selectedIndex].innerHTML)+"&add1="+encodeURIComponent(NewAddress1)+"&add2=" + encodeURIComponent(NewAddress2) + "&add3="+encodeURIComponent(NewAddress3)+"&ocity="+encodeURIComponent(otherCity) +"&state="+encodeURIComponent(NewState)+"&pin="+encodeURIComponent(NewPinCode)+"&country="+encodeURIComponent(countryToSave)+"&isd="+encodeURIComponent(NewCountryCode)+"&std="+encodeURIComponent(NewStateCode) + "&pnum1=" + encodeURIComponent(NewPhNumber) + "&subCategoryId=" + subcat;
+
+    var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&label=" + encodeURIComponent(lblname)+"&city="+encodeURIComponent(document.getElementById('id_city').value)+"&add1="+encodeURIComponent(NewAddress1)+"&add2=" + encodeURIComponent(NewAddress2) + "&add3="+encodeURIComponent(NewAddress3)+"&ocity="+encodeURIComponent(otherCity) +"&state="+encodeURIComponent(NewState)+"&pin="+encodeURIComponent(NewPinCode)+"&country="+encodeURIComponent(NewCountry)+"&isd="+encodeURIComponent(NewCountryCode)+"&std="+encodeURIComponent(NewStateCode) + "&pnum1=" + encodeURIComponent(NewPhNumber) + "&subCategoryId=" + subcat;
+
+    if (module == "Online")
+        submitRequest.open("GET", requestPath+"/Job/addNewAddress"+queryString, true);
+    else if (module == "Offline")
+        submitRequest.open("GET", devOffpath+"/addNewAddress"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+
+}
+function checkAddAddress(objThis) {
+
+
+    document.getElementById('addstate').disabled = false;
+    //                document.getElementById('otherstate').style.display = "none";
+    document.getElementById('id_city').disabled = false;
+    document.getElementById('othercity').style.display = "none";
+    document.getElementById('addstd').disabled = true;
+    document.getElementById('pinText').style.display = "none";
+    document.getElementById('pinSelect').style.display = "block";
+    document.getElementById('lblname4').value='91';
+
+    var address = document.getElementById('address');
+    var subCategoryId = document.getElementById('subCategoryId').value;
+    if(address.length > 30 && (subCategoryId == 1 || subCategoryId == 80 || subCategoryId == 81 || subCategoryId == 3)) {
+        document.getElementById('address_err').className='error';
+        document.getElementById('address_err').style.display='block';
+        document.getElementById('address_err').innerHTML = 'You cannot add more than 30 addresses.';
+        return false;
+    }
+    else if(address.length > 1 && (subCategoryId != 1 && subCategoryId != 80 && subCategoryId != 81 && subCategoryId != 3)) {
+        document.getElementById('address_err').className='error';
+        document.getElementById('address_err').style.display='block';
+        document.getElementById('address_err').innerHTML = 'You cannot add more addresses.';
+        return false;
+    }
+    else if(document.getElementById('jobQtyLeft').value == 0 && (subCategoryId != 1 && subCategoryId != 80 && subCategoryId != 81 && subCategoryId != 3)) {
+        document.getElementById('address_err').className='error';
+        document.getElementById('address_err').style.display='block';
+        document.getElementById('address_err').innerHTML = 'Since your subscription has expired we cannot process this request.';
+        return false;
+    }
+    else {
+        modalwin('590','480','aeAddress', objThis);
+    }
+}
+
+function checkAddEmail(divId, superUser, category, objThis) {
+    var divLabelId = '';
+    if(trim(divId) != '' && divId != undefined)
+        divLabelId = "collectresp_"+divId+"_err";
+    else {
+        divLabelId = "collectresp_err";
+    }
+    var noclemail = document.getElementById('noclemail').value;
+
+    if(superUser != 1) {
+        document.getElementById(divLabelId).className='error';
+        document.getElementById(divLabelId).style.display='block';
+        var errMsg = "Email addition can be done only by account admin. Contact your account superuser";
+        superUserEmail ? errMsg += " (" + superUserEmail +")." : errMsg += ".";
+        document.getElementById(divLabelId).innerHTML = errMsg;
+        return false;
+    }
+    else if(document.getElementById("email").length >= noclemail && category != 1) {
+        document.getElementById(divLabelId).className='error';
+        document.getElementById(divLabelId).style.display='block';
+        document.getElementById(divLabelId).innerHTML = 'You cannot add more than '+noclemail+' email addresses.';
+        return false;
+    }
+    else if(document.getElementById('jobQtyLeft').value == 0 && category != 1) {
+        document.getElementById(divLabelId).className='error';
+        document.getElementById(divLabelId).style.display='block';
+        document.getElementById(divLabelId).innerHTML = 'Since your subscription has expired we cannot process this request.';
+        return false;
+    }
+    else {
+        modalwin('490','200','addEmail', objThis);
+    }
+}
+
+
+function otherCityNewAdd()
+{
+    var cityval = document.getElementById('id_city').value;
+    if(cityval == 65)
+    {
+        document.getElementById('othercity').style.display='block';
+        //document.getElementById('txt_addOthrcity').disabled = "" ;
+        document.getElementById('txt_addOthrcity').focus();
+        document.getElementById('txt_addOthrcity').className='';
+    }
+    else if (cityval != 65)
+    {
+        document.getElementById('othercity').style.display='none';
+        //document.getElementById('id_country').value = "58";
+        document.getElementById('txt_addOthrcity').value = "" ;
+        document.getElementById('ocityerr').innerHTML = "" ;
+        document.getElementById('id_city').className = "" ;
+    }
+    return true;
+}
+
+function otherCountryCityDD()
+{
+    var countryVal = document.getElementById('id_country').value;
+    if(countryVal != 66)
+    {
+        document.getElementById('id_city').value = "65";
+        document.getElementById('txt_addOthrcity').disabled = "" ;
+    }
+    return true;
+}
+
+function fetchMatchingResumes(id)
+{
+    var id = getUniqueId(id);
+    if(document.getElementById('id_sessionid'))
+        var sessionId = document.getElementById('id_sessionid').value;
+    if(document.getElementById('id_companyId'))
+        var compid = document.getElementById('id_companyId').value;
+    if(document.getElementById('actionName'))
+        var actionName = document.getElementById('actionName').value;
+    if(document.getElementById('jobId'))
+        var jobId = document.getElementById('jobId').value;
+
+    var requestPath = getRequestPath();
+    var submitRequest=getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                if(trim(submitRequest.responseText) != "ERROR")
+                {
+                    if(document.getElementById('id_resumelisting'))
+                    {
+                        document.getElementById('id_resumelisting').style.display="block";
+                        document.getElementById('id_resumelisting').innerHTML=submitRequest.responseText;
+                    }
+                }
+            }
+        }
+    }
+    var queryString = "?id="+encodeURIComponent(id)+"&companyId="+encodeURIComponent(compid)+"&sessionId="+encodeURIComponent(sessionId)+"&actionName="+encodeURIComponent(actionName)+"&jobId="+encodeURIComponent(jobId);
+    //document.write(requestPath+"/CrossSeller/search"+queryString);
+    submitRequest.open("GET", requestPath+"/CrossSeller/search"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function authenticationFailedMsg()
+{
+    var answer = confirm("Either you are not authenticated or your session has timed out.  Please login again.")
+    if (answer){
+        window.location.reload();
+    }
+}
+
+function autoSaveNpostLater(objFormName)
+{
+
+    id = document.getElementById('id').value;
+    var formElements = "";
+    var queryString = "";
+    var reqParamName = "";
+    var reqParamVal = "";
+    var reqElements = new Array();
+    var cntr = 0;
+    var requestPath = getRequestPath();
+    var sessionId = false;
+    var file_last_saved = '';
+    var fileToSave = '';
+    var tempErr = '';
+
+    // Validation
+    objSaveLabel = document.getElementById('id_savelbl');
+
+    // Query Generation
+    if(objFormName == 'jpFirstPage') {
+        var companyId = document.getElementById('companyId').value;
+        var subCategoryId = document.getElementById('subCategoryId').value;
+        try{
+            elements=eval("document."+objFormName+".getElementsByTagName('input')");
+            for(n=0; n < elements.length; n++)
+            {
+                if(elements[n].type=="text"){
+                    if(elements[n].value != '') {
+                        if(elements[n].name == 'cmNewProj' && (elements[n].value == '' || elements[n].value == 'Enter a name for the Requirement'))
+                            elements[n].value = document.getElementById("desig").value;
+
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="hidden"){
+                    if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="radio" && elements[n].checked==true) {
+                    if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="checkbox" && elements[n].checked==true) {
+                    if(elements[n].name=='responseFilterChkBox') {
+                        reqElements[cntr] = "responseFilter::"+encodeURIComponent('locFilter');
+                        cntr++;
+                    }
+                    else if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="checkbox" && elements[n].checked==false && elements[n].name == 'responseFilterChkBox') {
+                    reqElements[cntr] = "responseFilter::"+encodeURIComponent('noFilter');
+                    cntr++;
+                }
+            }
+
+            var pageElemsForAjaxForm = mapToOldValue(1);
+            var pageElemVal;
+            for(n=0;n<pageElemsForAjaxForm.length;n++)
+            {
+                reqElements[cntr] = pageElemsForAjaxForm[n];
+                cntr++;
+            }
+
+            cntr=reqElements.length;
+            selectArr=eval("document."+objFormName+".getElementsByTagName('select')");
+            for(n=0;n<selectArr.length;n++) {
+                arrSelect = selectArr[n].options;
+                nameSelect = selectArr[n].name;
+                if(nameSelect != 'city' && nameSelect != 'addcountry') {
+                    for(m=0;m<arrSelect.length;m++) {
+                        if(arrSelect[m].selected == true) {
+                            reqElements[cntr] = nameSelect + "::"+ encodeURIComponent(arrSelect[m].value);
+                            /*
+                             if(nameSelect.substr(nameSelect.length-2,nameSelect.length) == "[]")
+                             reqElements[cntr] = nameSelect + "::"+ encodeURIComponent(arrSelect[m].value);
+                             else
+                             reqElements[cntr] = nameSelect + "[]::"+ encodeURIComponent(arrSelect[m].value);
+                             */
+                            cntr++;
+                        }
+                    }
+                }
+            }
+            cntr=reqElements.length;
+            var textAreaArr=document.getElementsByTagName('textarea');
+            for(var m=0;m < textAreaArr.length;m++) {
+                if (FCKeditorAPI != undefined && gbi(textAreaArr[m].id+'___Frame') != undefined) {
+                    var textareaValue =  getEditorHTML(textAreaArr[m].id, true);
+                }
+                else
+                    var textareaValue = textAreaArr[m].value;
+                if(textareaValue != '') {
+                    reqElements[cntr]=textAreaArr[m].name+"::"+encodeURIComponent(textareaValue);
+                    cntr++;
+                }
+            }
+            cntr=reqElements.length;
+
+            if($editor){
+                $editor.viewSrc();
+                if($editor.cInput.val() != '') {
+                    if($editor.checkHTMLTags()){
+                        reqElements[cntr]=$editor.cInput.attr('name')+"::"+encodeURIComponent($editor.cInput.val());
+                    }else{
+                        reqElements[cntr]=$editor.cInput.attr('name')+"::"+encodeURIComponent(stripHTML($editor.cInput.val()));
+                    }
+                    cntr++;
+                }
+            }
+            if($editorCP){
+                $editorCP.viewSrc();
+                if($editorCP.cInput.val() != '') {
+                    if($editorCP.checkHTMLTags()){
+                        reqElements[cntr]=$editorCP.cInput.attr('name')+"::"+encodeURIComponent($editorCP.cInput.val());
+                    }else{
+                        reqElements[cntr]=$editorCP.cInput.attr('name')+"::"+encodeURIComponent(stripHTML($editorCP.cInput.val()));
+                    }
+                    cntr++;
+                }
+            }
+        }
+        catch(e){}
+
+        /*
+         for(var m=0;m < textAreaArr.length;m++) {
+         if(textAreaArr[m].value != '') {
+         reqElements[cntr]=textAreaArr[m].name+"::"+encodeURIComponent(textAreaArr[m].value);
+         cntr++;
+         }
+         }
+         }
+         catch(e){}
+         */
+        for(sCntr=0;sCntr<reqElements.length;sCntr++)
+        {
+            tempReqArr = reqElements[sCntr].split('::');
+            reqParamName = tempReqArr[0];
+            reqParamVal = tempReqArr[1];
+
+            queryString += reqParamName+"="+reqParamVal+"&";
+        }
+
+        //              queryString = (queryString.substr(0,(queryString.length)-1));
+        queryString = queryString+"&pageId=1&companyId="+companyId+"&subCategoryId="+subCategoryId+"&id="+id+"&autoSaveId="+autoSaveId;
+    }
+    else {
+        if( document.getElementById('id_file_last_saved'))
+            var companyId = document.getElementById('id_companyId').value;
+        var subCategoryId = document.getElementById('id_subCategoryId').value;
+        sessionId = document.getElementById('id_sessionid').value;
+        if(sessionId)
+            queryString="sessionId="+sessionId+"&pageId=2&companyId="+companyId+"&subCategoryId="+subCategoryId+"&id="+id+"&autoSaveId="+autoSaveId;
+        else
+            return false;
+    }
+// Further Processing
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                returnText = submitRequest.responseText.split("|XX|");
+                if(returnText != "ERROR") {
+                    autoSaveId = returnText[0];
+                    document.getElementById('id_autoSavedJobId').value = autoSaveId;
+                    if(returnText[1] != "") {
+                        lastAutoSaveTime = returnText[1];
+                        document.getElementById("savingD").style.display = "block";
+                        document.getElementById("savingDif").style.display = "block";
+                        document.getElementById("savedPostIt").innerHTML = "Job automatically saved as 'Autosaved Draft' under 'Manage Jobs & Responses' at "+lastAutoSaveTime;
+                    }
+                    if(trim(submitRequest.responseText) != "") {
+                        if(returnText[1] == 'y')
+                        {
+                            objSaveLabel.className = 'errorfill';
+                            document.getElementById('save_err').style.display = 'block';
+                            document.getElementById('save_err').className = 'error';
+                            document.getElementById('save_err').innerHTML = returnText[0];
+                        }
+                    }
+                    setTimeout("document.getElementById(\"savingD\").style.display = \"none\";document.getElementById(\"savingDif\").style.display = \"none\";", 30000);
+                }
+                else {  // not authorized or session time-out
+                    if(lastAutoSaveTime != "") {
+                        document.getElementById("savingD").style.display = "block";
+                        document.getElementById("savingDif").style.display = "block";
+                        document.getElementById("savedPostIt").innerHTML = "Job automatically saved as 'Autosaved Draft' under 'Manage Jobs & Responses' at "+ lastAutoSaveTime;
+                    }
+                }
+            }
+        }
+    }
+    submitRequest.open("POST", requestPath+"/Job/autoSaveNPostLater", true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+//submitRequest.setRequestHeader("Content-length", queryString.length);
+//submitRequest.setRequestHeader("Connection", "close");
+    submitRequest.send(queryString);
+    setTimeout("autoSaveNpostLater('jpFirstPage')",120000);
+}
+var lastAutoSaveTime = "";
+
+
+
+
+function saveNpostLater(objFormName)
+{
+    id = document.getElementById('id').value;
+    var formElements = "";
+    var queryString = "";
+    var reqParamName = "";
+    var reqParamVal = "";
+    var reqElements = new Array();
+    var cntr = 0;
+    var requestPath = getRequestPath();
+    var sessionId = false;
+    var file_last_saved = '';
+    var fileToSave = '';
+    var tempErr = '';
+    if(document.getElementById('overwrite') && document.getElementById('overwrite').value != "")
+        overWrite = document.getElementById('overwrite').value;
+    else
+        overWrite = 'n';
+
+    // Validation
+    objSaveLabel = document.getElementById('id_savelbl');
+    if(trim(objSaveLabel.value)=='') {
+        tempErr = 'The file name can not be left blank. Please specify a file name to save the job. <br />';
+    }
+    else if(testHtmTag(trim(objSaveLabel.value), false) == true){
+        tempErr = 'HTML tags are not supported in this field. <br />';
+    }
+    else if(trim(objSaveLabel.value).length > 40) {
+        tempErr = 'Filename cannot be greater than 40 characters. <br />';
+    }
+    else if(objFormName == 'jpFirstPage')
+    {
+        var desig = trim(document.getElementById('desig').value);
+
+        if(desig == "")
+            tempErr = 'Designation / Position field cannot be left blank. <br />';
+        else if(testHtmTag(desig, false) == true)
+        {
+            tempErr += "HTML tags are not supported in Designation / Position field.<br />";
+        }
+        else if (/^[^a-z.]/i.test(desig))
+        {
+            tempErr += "Designation / Position should begin with a letter (A-Z) or a dot (.). <br />";
+        }
+        else if(desig.length > 70)
+        {
+            tempErr += "Designation / Postion exceeded the maximum limit of 70 characters. <br />";
+        }
+    }
+
+    if(tempErr.length > 0)
+    {
+        objSaveLabel.className = 'errorfill';
+        document.getElementById('save_err').className = 'error';
+        document.getElementById('save_err').style.display = 'block';
+        document.getElementById('save_err').innerHTML = tempErr;
+        return false;
+    }
+    else
+    {
+        fileToSave = trim(objSaveLabel.value);
+
+        objSaveLabel.className = '';
+        document.getElementById('save_err').className = 'ltGrey';
+        document.getElementById('save_err').style.display = 'block';
+        document.getElementById('save_err').style.margin = '10px 0px 0px 160px';
+        document.getElementById('save_err').innerHTML = 'Your Job is being saved. Please wait.';
+    }
+
+    // Query Generation
+    if(objFormName == 'jpFirstPage') {
+        var companyId = document.getElementById('companyId').value;
+        var subCategoryId = document.getElementById('subCategoryId').value;
+        if( document.getElementById('id_file_last_saved'))
+            var file_last_saved = document.getElementById('id_file_last_saved').value;
+        try{
+            elements=eval("document."+objFormName+".getElementsByTagName('input')");
+            for(n=0; n < elements.length; n++)
+            {
+                if(elements[n].type=="text"){
+                    if(elements[n].value != '') {
+                        if(elements[n].name == 'cmNewProj' && (elements[n].value == '' || elements[n].value == 'Enter a name for the Requirement'))
+                            elements[n].value = document.getElementById("desig").value;
+
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="hidden")
+                {
+                    if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="radio" && elements[n].checked==true) {
+                    if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="checkbox" && elements[n].checked==true) {
+                    if(elements[n].name=='responseFilterChkBox') {
+                        reqElements[cntr] = "responseFilter::"+encodeURIComponent('locFilter');
+                        cntr++;
+                    }
+                    else if(elements[n].value != '') {
+                        reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                        cntr++;
+                    }
+                }
+                else if(elements[n].type=="checkbox" && elements[n].checked==false) {
+                    if(elements[n].name == 'responseFilterChkBox') {
+                        reqElements[cntr] = "responseFilter::"+encodeURIComponent('noFilter');
+                        cntr++;
+                    }
+                    if(elements[n].name=='postAsPrivate'){
+                        reqElements[cntr] = "responseFilter::"+encodeURIComponent('n');
+                        cntr++;
+                    }
+                }
+            }
+
+            var pageElemsForAjaxForm = mapToOldValue(1);
+            var pageElemVal;
+            for(n=0;n<pageElemsForAjaxForm.length;n++)
+            {
+                reqElements[cntr] = pageElemsForAjaxForm[n];
+                cntr++;
+            }
+            cntr=reqElements.length;
+            selectArr=eval("document."+objFormName+".getElementsByTagName('select')");
+            for(n=0;n<selectArr.length;n++) {
+                arrSelect = selectArr[n].options;
+                nameSelect = selectArr[n].name;
+                if(nameSelect != 'city' && nameSelect != 'addcountry') {
+                    for(m=0;m<arrSelect.length;m++) {
+                        if(arrSelect[m].selected == true) {
+                            reqElements[cntr] = nameSelect + "::"+ encodeURIComponent(arrSelect[m].value);
+                            /*
+                             if(nameSelect.substr(nameSelect.length-2,nameSelect.length) == "[]")
+                             reqElements[cntr] = nameSelect + "::"+ encodeURIComponent(arrSelect[m].value);
+                             else
+                             reqElements[cntr] = nameSelect + "[]::"+ encodeURIComponent(arrSelect[m].value);
+                             */
+                            cntr++;
+                        }
+                    }
+                }
+            }
+            cntr=reqElements.length;
+            var textAreaArr=document.getElementsByTagName('textarea');
+            for(var m=0;m < textAreaArr.length;m++) {
+                if (FCKeditorAPI != undefined && gbi(textAreaArr[m].id+'___Frame') != undefined) {
+                    var textareaValue =  getEditorHTML(textAreaArr[m].id, true);
+                }
+                else
+                    var textareaValue = textAreaArr[m].value;
+                if(textareaValue != '') {
+                    reqElements[cntr]=textAreaArr[m].name+"::"+encodeURIComponent(textareaValue);
+                    cntr++;
+                }
+            }
+
+            cntr=reqElements.length;
+            if($editor){
+                $editor.viewSrc();
+                if($editor.cInput.val() != '') {
+                    if($editor.checkHTMLTags()){
+                        reqElements[cntr]=$editor.cInput.attr('name')+"::"+encodeURIComponent($editor.cInput.val());
+                    }else{
+                        reqElements[cntr]=$editor.cInput.attr('name')+"::"+encodeURIComponent(stripHTML($editor.cInput.val()));
+                    }
+
+                    cntr++;
+                }
+            }
+            if($editorCP){
+                $editorCP.viewSrc();
+                if($editorCP.cInput.val() != '') {
+                    if($editorCP.checkHTMLTags()){
+                        reqElements[cntr]=$editorCP.cInput.attr('name')+"::"+encodeURIComponent($editorCP.cInput.val());
+                    }else{
+                        reqElements[cntr]=$editorCP.cInput.attr('name')+"::"+encodeURIComponent(stripHTML($editorCP.cInput.val()));
+                    }
+                    cntr++;
+                }
+            }
+
+
+        }
+        catch(e){ }
+
+        for(sCntr=0;sCntr<reqElements.length;sCntr++)
+        {
+            tempReqArr = reqElements[sCntr].split('::');
+            reqParamName = tempReqArr[0];
+            reqParamVal = tempReqArr[1];
+
+            queryString += reqParamName+"="+reqParamVal+"&";
+        }
+        newAutoSaveId = document.getElementById('id_autoSavedJobId').value;
+        queryString = queryString+"&pageId=1&companyId="+companyId+"&subCategoryId="+subCategoryId+"&fileToSave="+fileToSave+"&file_last_saved="+file_last_saved+"&overwrite="+overWrite+"&id="+id+"&newAutoSaveId="+newAutoSaveId;
+    }
+    else {
+        if( document.getElementById('id_file_last_saved'))
+            var file_last_saved = document.getElementById('id_file_last_saved').value;
+        var companyId = document.getElementById('id_companyId').value;
+        var subCategoryId = document.getElementById('id_subCategoryId').value;
+        sessionId = document.getElementById('id_sessionid').value;
+        newAutoSaveId = document.getElementById('id_autoSavedJobId').value;
+        if(newAutoSaveId == "")
+        {
+            newAutoSaveId = document.getElementById('autoPreviewSavedJobStatus').value;
+        }
+        if(sessionId)
+            queryString="sessionId="+sessionId+"&pageId=2&companyId="+companyId+"&subCategoryId="+subCategoryId+"&fileToSave="+fileToSave+"&file_last_saved="+file_last_saved+"&overwrite="+overWrite+"&id="+id+"&newAutoSaveId="+newAutoSaveId;
+        else
+            return false;
+    }
+    // Further Processing
+    var submitRequest = getXmlHttpObject();
+
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                returnText = submitRequest.responseText.split("|XX|");
+
+                if(trim(submitRequest.responseText) != "") {
+                    if (trim(submitRequest.responseText) == "ERROR")
+                        authenticationFailedMsg();
+                    else if(returnText[1] == undefined) {
+                        SetMsg('savenpost');
+                        objSaveLabel.className = '';
+                        document.getElementById('save_err').className = '';
+                        document.getElementById('save_err').style.display = 'none';
+                        document.getElementById('save_err').innerHTML = '';
+
+                        document.getElementById("msg_savenpost").style.display = "block";
+                        document.getElementById("msg_savenpost").innerHTML = "We are unable to process your request at this time due to technical reasons. Please report to us at bugs@naukri.com and continue with posting the job.";
+                        return false;
+                    }
+                    else if(returnText[1] == 'y')
+                    {
+                        objSaveLabel.className = 'errorfill';
+                        document.getElementById('save_err').style.display = 'block';
+                        document.getElementById('save_err').className = 'error';
+                        document.getElementById('save_err').innerHTML = returnText[0];
+                    }
+                    else
+                    {
+                        SetMsg('savenpost');
+                        objSaveLabel.className = '';
+                        document.getElementById('save_err').className = '';
+                        document.getElementById('save_err').style.display = 'none';
+                        document.getElementById('save_err').innerHTML = '';
+
+                        document.getElementById("msg_savenpost").style.display = "block";
+                        document.getElementById("msg_savenpost").innerHTML = returnText[0];
+
+                        if(document.getElementById('last_saved')) {
+                            document.getElementById('last_saved').innerHTML = fileToSave;
+                            document.getElementById('last_saved').parentNode.style.visibility = "visible";
+                        }
+
+                        document.getElementById('id_file_last_saved').value = fileToSave;
+
+                    }
+                    document.getElementById("overwrite").value = returnText[1];
+                    document.getElementById("jobId").value = returnText[2];
+                    focuschangeNew2('savelayer');
+                }
+                else
+                {
+                    document.getElementById("msg_savenpost").style.display = "block";
+                    document.getElementById("msg_savenpost").innerHTML = "We are unable to process your request at this time due to technical reasons. Please report to us at bugs@naukri.com and continue with posting the job.";
+                }
+
+            }
+        }
+    }
+    //document.write(requestPath+"/Job/saveNPostLater?"+queryString);
+    submitRequest.open("POST", requestPath+"/Job/saveNPostLater", true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    submitRequest.setRequestHeader("Content-length", queryString.length);
+    submitRequest.setRequestHeader("Connection", "close");
+    submitRequest.send(queryString);
+}
+function retainSaveNPostLaterFileName()
+{
+    if(document.getElementById('fileToSave') && document.getElementById('fileToSave').value != '')
+    {
+        if(document.getElementById('id_savelbl'))
+            document.getElementById('id_savelbl').value = document.getElementById('fileToSave').value;
+    }
+    else if(document.getElementById('id_file_last_saved') && document.getElementById('id_file_last_saved').value != '')
+    {
+        if(document.getElementById('id_savelbl'))
+            document.getElementById('id_savelbl').value = document.getElementById('id_file_last_saved').value;
+    }
+}
+/*function logRefershCount(actionPerformed)
+ {
+ var companyId = document.getElementById('companyId').value;
+ var jobId = document.getElementById('jobId').value;
+ var requestPath = getRequestPath();
+ var queryString = "?actionPerformed="+ encodeURIComponent(actionPerformed)+"&companyId="+encodeURIComponent(companyId)+"&jobId="+encodeURIComponent(jobId);
+ var submitRequest = getXmlHttpObject();
+ submitRequest.open("GET", requestPath+"/Job/refreshLog"+queryString, true);
+ submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+ submitRequest.send(null);
+ }/**/
+
+function populateCity(id,cityid,module)
+{
+    document.getElementById('addstd').value='';
+    var objChCity = document.getElementById('pincodeSel');
+    for(var ctr=0;ctr<objChCity.options.length;ctr++)
+        if(objChCity.options[ctr].value == '-1') {
+            objChCity.selectedIndex = ctr;
+            break;
+        }
+
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                document.getElementById(cityid).innerHTML='';
+                var optn = document.createElement("OPTION");
+                optn.text="Select a City";
+                optn.value="-1";
+                document.getElementById(cityid).options.add(optn);
+                var response = new String(submitRequest.responseText);
+                arrResponse  = response.split("|X|");
+                var len = arrResponse.length - 1;
+                for (temp = 0;temp<len;temp++)
+                {
+                    arrDets = arrResponse[temp].split("~");
+                    var optn = document.createElement("OPTION");
+                    optn.text=arrDets[1];
+                    optn.value=arrDets[0];
+                    document.getElementById(cityid).options.add(optn);
+                }
+            }
+        }
+    }
+    var stateID = document.getElementById(id).value;
+
+    var queryString = "?stateId="+ encodeURIComponent(stateID);
+    var id = getUniqueId("id");
+    var requestPath = getRequestPath();
+    if (module=='Offline') {
+        submitRequest.open("GET", devOffpath+"/ajaxGetCity"+queryString, true);
+    }
+    else {
+        submitRequest.open("GET", requestPath+"/Job/ajaxGetCity"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function populateState(countryID,isdID,module)
+{
+
+    document.getElementById('addstd').value='';
+    var objChCity = document.getElementById('pincodeSel');
+    for(var ctr=0;ctr<objChCity.options.length;ctr++)
+        if(objChCity.options[ctr].value == '-1') {
+            objChCity.selectedIndex = ctr;
+            break;
+        }
+
+    var INDIACODE = document.getElementById('INDIACODE').value;
+    if (document.getElementById('id_country').value == INDIACODE)
+    {
+        document.getElementById('addstate').disabled = false;
+        document.getElementById('id_city').disabled = false;
+        document.getElementById('othercity').style.display = "none";
+        document.getElementById('addstd').disabled = true;
+        document.getElementById('pinText').style.display = "none";
+        document.getElementById('pinSelect').style.display = "block";
+    }
+    else
+    {
+        document.getElementById('addstate').value = "-1";
+        document.getElementById('addstate').disabled = true ;
+        document.getElementById('id_city').disabled = true ;
+        document.getElementById('id_city').value = "-1";
+        document.getElementById('othercity').style.display = "block";
+        document.getElementById('addstd').disabled ="";
+        document.getElementById('addpin').value='';
+        document.getElementById('pinText').style.display = "block";
+        document.getElementById('pinSelect').style.display = "none";
+
+    }
+    //        pincode();
+
+    if (module=='Offline') {
+        populateIsdCode(countryID,isdID,module);
+    }
+    else {
+        populateIsdCode(countryID,isdID);
+    }
+}
+function populatePinCode(cityID,pinID,module)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                document.getElementById(pinID).innerHTML="";
+                var optn = document.createElement("OPTION");
+                optn.text="Select a PinCode";
+                optn.value="-1";
+                document.getElementById(pinID).options.add(optn);
+
+                var response = new String(submitRequest.responseText);
+                arrResponse  = response.split("|X|");
+                var len = arrResponse.length - 1;
+                for (temp = 0;temp<len;temp++)
+                {
+                    arrDets = arrResponse[temp].split("~");
+                    var optn = document.createElement("OPTION");
+                    optn.text=arrDets[1];
+                    optn.value=arrDets[1];
+                    document.getElementById(pinID).options.add(optn);
+                }
+            }
+        }
+    }
+    var cityID = document.getElementById(cityID).value;
+    var queryString = "?cityId="+ encodeURIComponent(cityID);
+    var requestPath = getRequestPath();
+    // submitRequest.open("GET", requestPath+"/Job/ajaxGetPinCode"+queryString, true);
+    if (module=='Offline') {
+        submitRequest.open("GET", devOffpath+"/ajaxGetPinCode"+queryString, true);
+    }
+    else {
+        submitRequest.open("GET", requestPath+"/Job/ajaxGetPinCode"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+function populateStdCode(cityid,stdid,module)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                document.getElementById(stdid).value = response;
+            }
+        }
+    }
+    var cityID = document.getElementById(cityid).value;
+    var queryString = "?cityId="+ encodeURIComponent(cityID);
+    var requestPath = getRequestPath();
+    // submitRequest.open("GET", requestPath+"/Job/ajaxGetStdCode"+queryString, true);
+    if (module=='Offline') {
+        submitRequest.open("GET", devOffpath+"/ajaxGetStdCode"+queryString, true);
+    }
+    else {
+        submitRequest.open("GET", requestPath+"/Job/ajaxGetStdCode"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function populateIsdCode(countryid,isdId,module)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                document.getElementById(isdId).value = response;
+            }
+        }
+    }
+    var countryID = document.getElementById(countryid).value;
+    var queryString = "?countryId="+ encodeURIComponent(countryID);
+    var requestPath = getRequestPath();
+    //submitRequest.open("GET", requestPath+"/Job/ajaxGetIsdCode"+queryString, true);
+    if (module=='Offline') {
+        submitRequest.open("GET", devOffpath+"/ajaxGetIsdCode"+queryString, true);
+    }
+    else {
+        submitRequest.open("GET", requestPath+"/Job/ajaxGetIsdCode"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function checkPassAuth(uName,pwd,network)
+{
+    if(network=="Linkedin" && document.getElementById('linkImg').style.display=="none")
+    {
+        document.getElementById('linkedinUserName').value=document.getElementById('uName').value;
+        document.getElementById('linkedinPwd').value=document.getElementById('pwd').value;
+    }
+
+    if(network=="savedList")
+    {
+        if(document.getElementById('listName').value=="-1")
+        {
+            document.getElementById('saved_err').innerHTML="Please select a list."
+            document.getElementById('saved_err').style.display="block";
+            return false;
+        }
+
+    }
+    if((network=="Linkedin") && (document.getElementById('linkImg').style.display=="block"))
+    {
+        document.getElementById('confLinkdinText_err').className="noerror";
+
+        if (document.getElementById('confLinkdinText').value=="")
+        {
+            document.getElementById('confLinkdinText_err').className="error";
+            document.getElementById('confLinkdinText_err').innerHTML="Please enter the captcha value.";
+            return false;
+        }
+
+        var passAuth=1;
+    }
+    else
+        var passAuth = validateUnamePwd('uName','pwd');
+    if(passAuth)
+    {
+        if(network=="Linkedin")
+        {
+            if((document.getElementById('linkImg').style.display=="none") )
+                getCaptchaDets(uName,pwd);
+            else
+                getShareJobEmailIds(uName,pwd,network);
+        }
+        else
+            getShareJobEmailIds(uName,pwd,network);
+    }
+
+}
+
+function getShareJobEmailIds(uName,pwd,network)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                document.getElementById('loader').style.display='none';
+                document.getElementById('emailBtn').disabled='';
+                var response = new String(submitRequest.responseText);
+                var arrStr=response.split("#$$#");
+                if(response=="error" || arrStr[0].split("~")[1]=="INVALID_LOGIN")
+                {
+                    document.getElementById('errormess').style.display="block";
+                }
+                else if(trim(response)=="captchaError")
+                {
+                    document.getElementById('confLinkdinText_err').className="error";
+
+                    document.getElementById('confLinkdinText_err').innerHTML="Please enter the correct value.";
+
+                    getCaptchaDets(document.getElementById('uName').value,document.getElementById('pwd').value);
+                }
+                else
+                {
+                    var len = arrStr.length - 1;
+                    document.getElementById('errormess').style.display="none";
+                    document.getElementById('table'+network).style.display="block"
+                    document.getElementById('LoginBx').style.display="none"
+                    document.getElementById('login'+network).value='email';
+                    document.getElementById('cntEmail'+network).innerHTML=len;
+
+                    var str="<table id='shrEmail' style='width:475px;!width:475px;_width:458px;' cellspacing='0' cellpadding='0' border='0'> <tr class='oddRow' style='height: 1px'><td valign='top' style='width: 12px;height: 1px;'></td><td style='width:204px;height: 1px;' ></td><td style='width: 204px;height: 1px;'  ></td></tr>";
+                    for (temp = 0;temp<len;temp++)
+                    {
+                        t=arrStr[temp];
+                        var arrDets = t.split("~");
+                        if ( (network=="Yahoo") || (network=="savedList") || (network=="Brijj"))
+                            emailId=arrDets[1];
+                        else
+                        {
+                            if (temp==0 )
+                            {
+                                last=arrDets[0].length;
+                                arrDets[0]=arrDets[0].substring(1,last);
+                            }
+
+                            emailId = arrDets[0];
+                        }
+                        tid="chk"+emailId;
+                        str=str+"<tr class='oddRow hT28'><td valign='top' style='width: 12px'><input id='"+tid+"' type='checkbox' class='mrtp7' value='"+emailId+"' name='allbox[]' onClick='javascript:moveEmailIdShareJobObj(this);' /></td><td style='width:204px;' class='bdrLt lh17'><label for='' title='"+arrDets[1]+"'>"+trimEmail(arrDets[1])+"</label></td>";
+                        if( (network=="Gmail") || (network=="Linkedin") || (network=="Yahoo"))
+                            str=str+"<td style='width: 204px' class='lh17 bdrLt ltGrey' title='"+arrDets[0]+"'>&lt;"+trimEmail(arrDets[0])+"&gt;</td></tr>";
+                    }
+                    str=str+"</table>";
+                    document.getElementById('emails'+network).innerHTML=str;
+                    checkSignOut(network);
+                }
+
+            }
+        }
+    }
+
+    if(network!="Linkedin")
+    {
+        document.getElementById('emailBtn').disabled='disabled';
+        document.getElementById('loader').style.display='block';
+        document.getElementById('loader').style.display='block';
+        var queryString = "?uName="+encodeURIComponent(uName)+"&pwd="+encodeURIComponent(pwd)+"&site="+network+"&listName="+encodeURIComponent(document.getElementById('listName').value);
+    }
+    else
+    {
+        var queryString = "?site="+network+"&captchaText="+encodeURIComponent(document.getElementById('confLinkdinText').value)+"&captchaID="+document.getElementById('captchaID').value+"&captchaSecret="+encodeURIComponent(document.getElementById('captchaSecret').value)+"&csrfToken="+encodeURIComponent(document.getElementById('csrfToken').value)+"&imageRandNo="+encodeURIComponent(document.getElementById('imageRandNo').value);
+    }
+    document.getElementById('loader').style.display="block";
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/ContactList/getNetworkEmailIds"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function saveListNameShareJobs()
+{
+    listName = document.getElementById('listLabel').value;
+    selEmails = document.getElementById('selectedEmails').value;
+    if (listName && selEmails)
+    {
+        var submitRequest = getXmlHttpObject();
+        submitRequest.onreadystatechange = function() {
+            if (submitRequest.readyState==4)
+            {
+                if (submitRequest.status == 200)
+                {
+                    var response = new String(submitRequest.responseText);
+                    if(response=="duplicate")
+                    {
+                        document.getElementById('listLabel_error').className="error";
+                        document.getElementById('listLabel_error').innerHTML="This list name allready exists . Please enter a different name.";
+                    }
+                    else
+                    {
+                        document.getElementById('listLabel_error').className="noerror";
+                        hidemodal();
+                        alert("Your list has been saved successfully");
+                        objSavedList=document.getElementById('listName');
+                        var optn = document.createElement("OPTION");
+                        optn.text = listName;
+                        optn.value = response;
+                        objSavedList.options.add(optn);
+                        document.getElementById('savedListBox').style.display="block";
+                        document.getElementById('savedListMsg').style.display="none";
+
+                    }
+                }
+            }
+        }
+        var queryString = "&listName="+encodeURIComponent(listName)+"&selEmails="+encodeURIComponent(selEmails);
+        var requestPath = getRequestPath();
+        //        submitRequest.open("POST", requestPath+"/ContactList/saveContactList"+queryString, true);
+        submitRequest.open("POST", requestPath+"/ContactList/saveContactList", true);
+        submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        submitRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        submitRequest.setRequestHeader("Content-length", queryString.length);
+        submitRequest.send(queryString);
+    }
+    else
+    {
+        if (listName=="")
+        {
+            document.getElementById('listLabel_error').className="error";
+            document.getElementById('listLabel_error').innerHTML="Please enter a list name";
+        }
+        else if(selEmails=="")
+        {
+            document.getElementById('listLabel_error').className="error";
+            document.getElementById('listLabel_error').innerHTML="Please select atleast one email id in your list ";
+
+        }
+        return false;
+    }
+
+}
+function trimEmail(str)
+{
+    lenStr = str.length;
+    if(lenStr>20)
+    {
+        return (str.slice(0,20))+"...";
+
+    }
+    return str;
+
+
+}
+
+function addautoFwdEmailChkBxSuccessCB() {
+    var email= document.getElementById('addautoFwdEmailChkBx').value;
+    if(email!= ""){
+        emailKey='#'+email;
+        document.getElementById('autoFwdEmailContainer').style.display="block";
+        document.getElementById('setFilterN').style.display="block";
+        document.getElementById("eappsContainerSelector2").innerHTML+="<span id='eappsContainer2"+emailKey+"'>"+document.getElementById('addautoFwdEmailChkBx').value+"<a href='javascript:void(0)' onclick='selDel(eappsEmailDD, \""+emailKey+"\",this, \"\")' href='javascript:void(0)'> <img border='0' src='https://static.naukri.com/rstatic/images/cross_small.gif' ></a></span>";
+        document.getElementById('addautoFwdEmailChkBx').value="";
+        var countSpan = document.getElementById("eappsContainerSelector2").getElementsByTagName("span");
+        emailDD.selValue.push(emailKey);
+
+        emailArr[emailKey]=email;
+        eappsEmailDD.sorting('');
+        emailDD.showSelected_Value();
+        //applyLoader('eapps');
+        getUserRP();
+    }
+}
+
+function addNewEmailChkBox(id, module,superUser,subCategory,emailId,confMsgId,emailDD,isPV)
+{
+    if(document.getElementById('msg_autoFwdEmailChkBx')) {
+
+        document.getElementById('msg_autoFwdEmailChkBx').style.display="none";
+    }
+    if (isPV=="0") {
+        if(document.getElementById('msg_emailChkBx')) {
+            document.getElementById('msg_emailChkBx').style.display="none";
+        }
+
+        if(document.getElementById('msg_autoFwdEmailChkBxSM')) {
+            document.getElementById('msg_autoFwdEmailChkBxSM').style.display="none";
+        }
+    }
+    if(document.getElementById('msg_autoFwdEmailChkBxSM')) {
+        document.getElementById('msg_autoFwdEmailChkBxSM').style.display="none";
+    }
+
+
+    var id = getUniqueId(id);
+    if(emailId=="addEmailChkBx"){
+        var emaillbl = document.getElementById('addEmailChkBx').value;
+    }
+    else if(emailId=="addautoFwdEmailChkBx"){
+        var emaillbl = document.getElementById('addautoFwdEmailChkBx').value;
+    }else if(emailId=="addautoFwdEmailChkBxSM"){
+        var emaillbl = document.getElementById('addautoFwdEmailChkBxSM').value;
+    }
+    var errmsg = '';
+    arrEmail=emailsArray;
+    var noclemail = document.getElementById('noclemail').value;
+
+    var EmailRegEx = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,64}$/;
+    expressionReg = new RegExp(EmailRegEx);
+    // Validate
+
+    if(superUser != 1 && subCategory!=1)
+    {
+        var errMsg = "Email addition can be done only by account admin. Contact your account superuser";
+        superUserEmail ? errMsg += " (" + superUserEmail +")." : errMsg += ".";
+        errmsg = errMsg;
+    }
+    else if (arrEmail.length >= noclemail && subCategory != 1 && subCategory != 80 && subCategory != 81 && subCategory != 3)
+    {
+        errmsg = 'You have added the maximum email Ids allowed. Contact your Relationship Manager or support@naukri.com.';
+    }
+    else if (trim(emaillbl) == "" || trim(emaillbl)=="Add another Email Id" || trim(emaillbl)=="Specify new email id" )
+    {
+        errmsg = "Please specify an email address.";
+        //return false;
+    }
+    else if(!validateEmailAddr(emaillbl) && trim(emaillbl)!="Add another Email Id" || trim(emaillbl)=="Specify new email id")
+    {
+        errmsg = "Please enter a valid email address.";
+        //return false;
+    }
+    else if (emaillbl.length > 100)
+    {
+        errmsg = "The email address cannot be more than 100 characters.";
+    }
+    else if (!expressionReg.test(emaillbl))
+    {
+        errmsg = "Please enter a valid email address";
+    }
+
+    for(var emailKey in emailArr)// For iterating through a JSON because here emailArr is  JSON not just an array
+    {
+        if (emaillbl && emailArr[emailKey] && (emaillbl).toLowerCase() == (emailArr[emailKey]).toLowerCase() && emailKey!='#')
+        {
+            document.getElementById(emailId).className="w145 errorfill";
+            document.getElementById(emailId+"_err").style.display="block";
+            document.getElementById(emailId+"_err").innerHTML = "This email address: " + emaillbl +" already exists.";
+            document.getElementById(emailId+'_err').className = "error";
+            return false;
+        }
+    }
+
+    if(errmsg != '')
+    {
+        //emaillbl.focus();
+        document.getElementById(emailId).className = 'w145 errorfill';
+        document.getElementById(emailId+'_err').style.display = 'block';
+        document.getElementById(emailId+'_err').innerHTML = errmsg;
+        document.getElementById(emailId+'_err').className = "error";
+        return false;
+    }
+    else
+    {  if(emailId=="addEmailChkBx"){
+        var email= document.getElementById('addEmailChkBx').value;// vaibhav
+        if(email!= ""){
+            emailKey='#'+email;
+            document.getElementById('emailContainer').style.display="block";
+            document.getElementById("emailContainerSelector2").innerHTML+="<span id='emailContainer2"+emailKey+"'>"+document.getElementById('addEmailChkBx').value+"<a href='javascript:void(0)' onclick='selDel(emailDD, \""+emailKey+"\",this, \"\")' href='javascript:void(0)'> <img border='0' src='https://static.naukri.com/rstatic/images/cross_small.gif'></a></span>";
+            if(document.getElementById('addEmailChkBx').value!='Specify new email id' && document.getElementById('addEmailChkBx').value!='' ){
+                arrEmail.push(document.getElementById('addEmailChkBx').value);
+            }
+            document.getElementById('addEmailChkBx').value="";
+            var countSpan = document.getElementById("emailContainerSelector2").getElementsByTagName("span");
+            emailDD.selValue.push(emailKey);
+            emailArr[emailKey]=email;
+            emailDD.sorting('');
+            emailDD.showSelected_Value();
+            //applyLoader('email');
+            getUserRP();
+        }
+
+    }
+    else if(emailId=="addautoFwdEmailChkBx"){
+        var email= document.getElementById('addautoFwdEmailChkBx').value;// vaibhav
+        addEmailCall(emaillbl, module, confMsgId, emailId, addautoFwdEmailChkBxSuccessCB);
+        // if(email!= ""){
+        //     emailKey='#'+email;
+        //     document.getElementById('autoFwdEmailContainer').style.display="block";
+        //     document.getElementById('setFilterN').style.display="block";
+        //     document.getElementById("eappsContainerSelector2").innerHTML+="<span id='eappsContainer2"+emailKey+"'>"+document.getElementById('addautoFwdEmailChkBx').value+"<a href='javascript:void(0)' onclick='selDel(eappsEmailDD, \""+emailKey+"\",this, \"\")' href='javascript:void(0)'> <img border='0' src='https://static.naukri.com/rstatic/images/cross_small.gif' ></a></span>";
+        //     document.getElementById('addautoFwdEmailChkBx').value="";
+        //     var countSpan = document.getElementById("eappsContainerSelector2").getElementsByTagName("span");
+        //     emailDD.selValue.push(emailKey);
+
+        //     emailArr[emailKey]=email;
+        //     eappsEmailDD.sorting('');
+        //     emailDD.showSelected_Value();
+        //     //applyLoader('eapps');
+        //     getUserRP();
+        // }
+    }
+
+    else if(emailId=="addautoFwdEmailChkBxSM"){
+        var email= document.getElementById('addautoFwdEmailChkBxSM').value;
+        if(email!= ""){
+            emailKey='#'+email;
+            document.getElementById('autoFwdSMContainer').style.display="block";
+            document.getElementById("SMContainerSelector2").innerHTML+="<span id='SMContainer2"+emailKey+"'>"+document.getElementById('addautoFwdEmailChkBxSM').value+"<a href='javascript:void(0)' onclick='selDel(SMEmailDD, \""+emailKey+"\",this, \"\")' href='javascript:void(0)'> <img border='0' src='https://static.naukri.com/rstatic/images/cross_small.gif' ></a></span>";
+            document.getElementById('addautoFwdEmailChkBxSM').value="";
+            var countSpan = document.getElementById("SMContainerSelector2").getElementsByTagName("span");
+            emailDD.selValue.push(emailKey);
+
+            emailArr[emailKey]=email;
+            SMEmailDD.sorting('');
+            emailDD.showSelected_Value();
+            //applyLoader('eapps');
+            //getUserRP();
+        }
+    }
+
+        document.getElementById(emailId).className = 'w145';
+        document.getElementById(emailId+'_err').style.display = 'none';
+        document.getElementById(emailId+'_err').innerHTML = '';
+    }
+
+    if(emailId !="addautoFwdEmailChkBx") addEmailCall(emaillbl, module, confMsgId, emailId);
+}
+
+function addEmailCall(emaillbl, module, confMsgId, emailId, successCB) {
+    var submitRequest = getXmlHttpObject();
+    var compid = document.getElementById('companyId').value;
+    var subcatid = document.getElementById('subCategoryId').value;
+    var requestPath = getRequestPath();
+    var jobId = document.getElementById('jobId').value;
+
+    submitRequest.onreadystatechange = function(){
+        if(submitRequest.readyState == 4){
+            if(submitRequest.status == 200) {
+                if (isPV=="0") {
+                    document.getElementById('id_EmailBtnChkBx').disabled = false;
+                }
+                if(trim(submitRequest.responseText) == "ERROR")
+                    authenticationFailedMsg();
+                else if(trim(submitRequest.responseText) == "notAdded")
+                {
+                    SetMsg('email');
+                    document.getElementById(confMsgId).style.display = "block";
+                    document.getElementById(confMsgId).innerHTML = "<div class='redtxt'> There was an error while adding the email address. Please try again.</div>";
+                    document.getElementById(emailId).value="";
+                    //          focuschangeNew2('addEmail');
+                }
+                else if(trim(submitRequest.responseText) == "subscriptionExpired")
+                {
+                    SetMsg('email');
+                    document.getElementById(confMsgId).style.display = "block";
+                    document.getElementById(confMsgId).innerHTML = "<div class='redtxt'> Since your subscription has expired we cannot process this request.</div>";
+                    document.getElementById(emailId).value="";
+                    //          focuschangeNew2('addEmail');
+                }
+                else if (trim(submitRequest.responseText) == "duplicateEmail") {
+                    SetMsg('email');
+                    document.getElementById(confMsgId).style.display = "block";
+                    document.getElementById(confMsgId).innerHTML = "<div class='redtxt'> This email address: " + emaillbl +" already exists.</div>";
+                    document.getElementById(emailId).value="";
+                }
+                else if (trim(submitRequest.responseText) == "added")
+                {
+                    if(emailId ==="addautoFwdEmailChkBx") successCB();
+                    var arrCheckedEmails = new Array();
+                    emailLen=0;
+                    for(var z=0;z<arrEmail.length;z++)
+                    {
+                        if(arrEmail[z] && arrEmail[z].checked){
+                            arrCheckedEmails[emailLen] = (arrEmail[z].value);
+                            emailLen=emailLen+1;
+                        }
+                    }
+                    if(document.getElementById('autoFwdEmail'))
+                    {
+                        if (document.getElementById('email_2'))
+                            document.getElementById('email_2').innerHTML+=" <li><input type='checkbox'  name='autoFwdEmail[]' value="+emaillbl+" id=autoFwdEmail"+emaillbl+" onchange='selEmail(this)'><div class='right'>"+emaillbl+"</div></li>";
+
+                        if (emailDD=="email_2")
+                        {
+                            document.getElementById('autoFwdEmail'+emaillbl).checked="checked";
+                            selEmail(document.getElementById('autoFwdEmail'+emaillbl));
+                        }
+                    }
+
+                    if(document.getElementById('email'))
+                    {
+                        document.getElementById('email_1').innerHTML+=" <li><input type='checkbox'  name='email[]' value="+emaillbl+" id=chk"+emaillbl+" onchange='selEmail(this)'><div class='right'>"+emaillbl+"</div></li>";
+                        //      ObjEmailSel = document.getElementById('email');
+                        //    ObjEmailSel.appendChild(newSelOption1);
+                        if (emailDD=="email_1")
+                        {
+                            document.getElementById('chk'+emaillbl).checked="checked";
+                            selEmail(document.getElementById('chk'+emaillbl));
+                        }
+                    }
+
+                    //      alert(arrCheckedEmails.length+arrCheckedEmails[0]+arrCheckedEmails.length[1]);
+                    //      alert(arrEmail[0].value);
+                    for(z=0;z<arrEmail.length;z++)
+                    {
+                        for(num=0;num<arrCheckedEmails.length;num++)
+                        {
+                            if(arrEmail[z].value==arrCheckedEmails[num]){
+                                arrEmail[z].checked="checked";
+                            }
+                        }
+                    }
+
+                    //          SetMsg('email');
+                    document.getElementById(confMsgId).style.display = "block";
+                    document.getElementById(confMsgId).className = "greenCol";
+                    document.getElementById(confMsgId).innerHTML = "<div > You will recieve responses to this job posting on this newly added email .</div>";
+                    document.getElementById(emailId).value="";
+                    //        focuschangeNew2('addEmail');
+                }
+            }
+            else
+                serviceFailedMessage();
+        }
+    }
+    var queryString = "?id="+ encodeURIComponent(id)+ "&companyId="+ encodeURIComponent(compid)+"&emaillbl=" + encodeURIComponent(emaillbl)+"&subCategoryId=" +encodeURIComponent(subcatid);
+    if (jobId != undefined && jobId != null && jobId != '')
+    {
+        queryString = queryString + '&jobId=' + jobId;
+    }
+    if(module == "Online")
+        submitRequest.open("GET", requestPath+"/Job/addNewEmail"+queryString, true);
+    else if(module == "Offline")
+        submitRequest.open("GET", devOffpath+"/addNewEmail"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    document.getElementById('id_EmailBtn').disabled = true;
+    submitRequest.send(null);
+}
+
+function makeEhireEntry(jobId,subCategoryId,companyId)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                //                    document.getElementById(isdId).value = response;
+            }
+        }
+    }
+    var queryString = "?jobId="+ encodeURIComponent(jobId)+"&subCatId="+encodeURIComponent(subCategoryId)+"&companyId="+encodeURIComponent(companyId);
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/Job/makeEhireEntry"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+
+function getCaptchaDets(uName,pwd)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                document.getElementById('loader').style.display="none";
+                var response = new String(submitRequest.responseText);
+                arrDets = response.split("##");
+                document.getElementById('tableGmail').style.display="none";
+                document.getElementById('tableLinkedin').style.display="none";
+                document.getElementById('tableBrijj').style.display="none";
+                document.getElementById('tablesavedList').style.display="none";
+                document.getElementById('LoginBx').style.display="block";
+                document.getElementById('linkImg').style.display="block";
+                document.getElementById('nwEmails').style.display="none";
+                document.getElementById('loginLinkedin').value="login";
+                document.getElementById('captchaID').value=arrDets[0];
+                document.getElementById('captchaSecret').value=arrDets[1];
+                document.getElementById('csrfToken').value=arrDets[2];
+                document.getElementById('imageRandNo').value=arrDets[3];
+                var LinkdinImage=document.getElementById('LINKEDINIMAGE').value+"/images/captchaImages/captchaLinkedIn"+arrDets[3]+".jpg";
+                document.getElementById('linkImage').src=LinkdinImage;
+                document.getElementById('showCaptcha').value="1";
+                document.getElementById('signoutSpan').style.display="block";
+
+            }
+        }
+        else
+            document.getElementById('loader').style.display="block";                                                     }
+    var queryString = "?uName="+ encodeURIComponent(document.getElementById("linkedinUserName").value)+"&pwd="+encodeURIComponent(document.getElementById("linkedinPwd").value);
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/ContactList/getCaptchaDets"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+
+}
+
+
+function showSelectedNetwork(network,flag)
+{
+    if(network=="Gmail")
+        makeNetworkSelUnSel('getContGmail');
+    else if (network=="Brijj")
+        makeNetworkSelUnSel('getContBrijj');
+    //      else if (network=="Yahoo")
+    //              makeNetworkSelUnSel('getContYahoo');
+    else if (network=="Linkedin")
+        makeNetworkSelUnSel('getContLink');
+    else
+        makeNetworkSelUnSel('getContSaved');
+    if(flag=='1')
+    {
+        document.getElementById('networkName').innerHTML=network;
+        //                document.getElementById('table'+network).style.display="block";
+        //              document.getElementById('login'+network).value="email";
+    }
+
+}
+
+
+
+
+
+function facebookTrack()
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+            }
+        }
+    }
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/ContactList/facebookTrack", true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+
+function checkDuplicateEmailId(email, reportType)
+{
+    if( reportType == 'closure'){
+        var objEmail=document.getElementById('misClosureJPEmails');
+    }
+    else if(reportType == 'AllReferralsIJP'){
+        var objEmail=document.getElementById('misAllReferralsByEmails');
+    }
+    else if(reportType == 'jobWiseStatusIJP'){
+        var objEmail=document.getElementById('misJobWiseStatusJPEmails');
+    }
+    else if(reportType == 'jobWiseSource'){
+        var objEmail=document.getElementById('misJobWiseSourceJPEmails');
+    }
+    else if(reportType == 'employee'){
+        var objEmail=document.getElementById('misEmployeeJPEmails');
+    }
+    else if(reportType == 'employeeRefBy'){
+        var objEmail=document.getElementById('misEmployeeRefByEmails');
+    }
+    else if(reportType == 'AllReferrals'){
+        var objEmail=document.getElementById('misAllReferralsByEmails');
+    }
+    else if(reportType == 'StatusWiseReferrals'){
+        var objEmail=document.getElementById('misStatusWiseReferralsByEmails');
+    }
+    else if(reportType == 'StatusWiseReferrals'){
+        var objEmail=document.getElementById('misStatusWiseReferralsByEmails');
+    }
+    else if(reportType == 'jobWiseStatus'){
+        var objEmail=document.getElementById('misJobWiseStatusJPEmails');
+    }else{
+        var objEmail=document.getElementById('misJPEmails');
+    }
+    arrObjEmail = objEmail.getElementsByTagName('div');
+    for(n=0;n<arrObjEmail.length;n++)
+    {
+        if (email.toUpperCase() == arrObjEmail[n].id.toUpperCase())
+            return true;
+    }
+    return false;
+
+}
+function showEmailIdLink(isSuper, reportType)
+{
+    no = 0;
+    if(isSuper !=0){
+        no = 4;
+    }else{
+        no = 1;
+    }
+    if(reportType == 'closure'){
+        if(document.getElementById('cntClosureMisEmailId').value>=no){
+            document.getElementById('addClosureEmailIdLink').style.display="none";
+        }else{
+            document.getElementById('addClosureEmailIdLink').style.display="block";
+        }
+    }
+    else if(reportType == 'AllReferralsIJP'){
+        if(document.getElementById('cntAllReferralsMisEmailId').value>=no){
+            document.getElementById('addAllReferralsLink').style.display="none";
+        }else{
+            document.getElementById('addAllReferralsLink').style.display="block";
+        }
+    }
+    else if(reportType == 'jobWiseStatusIJP'){
+        if(document.getElementById('cntJobWiseStatusMisEmailId').value>=no){
+            document.getElementById('addJobWiseStatusEmailIdLink').style.display="none";
+        }else{
+            document.getElementById('addJobWiseStatusEmailIdLink').style.display="block";
+        }
+    }
+    else if(reportType == 'jobWiseSource'){
+        if(document.getElementById('cntJobWiseSourceMisEmailId').value>=no){
+            document.getElementById('addJobWiseSourceLink').style.display="none";
+        }else{
+            document.getElementById('addJobWiseSourceLink').style.display="block";
+        }
+    }
+    else if(reportType == 'employee'){
+        if(document.getElementById('cntEmployeeMisEmailId').value>=no){
+            document.getElementById('addEmployeeEmailIdLink').style.display="none";
+        }else{
+            document.getElementById('addEmployeeEmailIdLink').style.display="block";
+        }
+    }
+    else if(reportType == 'jobWiseStatus'){
+        if(document.getElementById('cntJobWiseStatusMisEmailId').value>=no){
+            document.getElementById('addJobWiseStatusEmailIdLink').style.display="none";
+        }else{
+            document.getElementById('addJobWiseStatusEmailIdLink').style.display="block";
+        }
+    }
+    else if(reportType == 'employeeRefBy'){
+        if(document.getElementById('cntEmployeeRefByEmailId').value>=no){
+            document.getElementById('addEmployeeRefByLink').style.display="none";
+        }else{
+            document.getElementById('addEmployeeRefByLink').style.display="block";
+        }
+    }
+    else if(reportType == 'AllReferrals'){
+        if(document.getElementById('cntAllReferralsMisEmailId').value>=no){
+            document.getElementById('addAllReferralsLink').style.display="none";
+        }else{
+            document.getElementById('addAllReferralsLink').style.display="block";
+        }
+    }
+    else if(reportType == 'jobWiseSource'){
+        if(document.getElementById('cntJobWiseSourceMisEmailId').value>=no){
+            document.getElementById('addJobWiseSourceLink').style.display="none";
+        }else{
+            document.getElementById('addJobWiseSourceLink').style.display="block";
+        }
+    }
+    else if(reportType == 'StatusWiseReferrals'){
+        if(document.getElementById('cntStatusWiseReferralsMisEmailId').value>=no){
+            document.getElementById('addStatusWiseReferralsLink').style.display="none";
+        }else{
+            document.getElementById('addStatusWiseReferralsLink').style.display="block";
+        }
+    }
+
+    else{
+        if(document.getElementById('cntMisEmailId').value>=no){
+            document.getElementById('addEmailIdLink').style.display="none";
+        }else{
+            document.getElementById('addEmailIdLink').style.display="block";
+
+        }
+    }
+}
+
+function checkEmailIdLimit(obj, isSuper, reportType)
+{
+    no = 0;
+    if(isSuper !=0){
+        no = 4;
+    }else{
+        no = 1;
+    }
+    if(reportType == 'closure'){
+        document.getElementById('emailClosureId1_err').className="noerror";
+        if(document.getElementById('cntClosureMisEmailId').value>=no)
+        {
+            document.getElementById('emailClosureId1_err').className="error";
+            document.getElementById('emailClosureId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addClosureEmailId', obj);
+        }
+    }
+    else if(reportType == 'AllReferralsIJP'){
+        document.getElementById('AllReferralsById_err').className="noerror";
+        if(document.getElementById('cntAllReferralsMisEmailId').value>=no)
+        {
+            document.getElementById('AllReferralsById_err').className="error";
+            document.getElementById('AllReferralsById_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','allReferralsByEmailId', obj);
+        }
+    }
+    else if(reportType == 'jobWiseStatusIJP'){
+        document.getElementById('emailJobWiseStatusId1_err').className="noerror";
+        if(document.getElementById('cntJobWiseStatusMisEmailId').value>=no)
+        {
+            document.getElementById('emailJobWiseStatusId1_err').className="error";
+            document.getElementById('emailJobWiseStatusId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addJobWiseStatusEmailId', obj);
+        }
+    }
+    else if(reportType == 'jobWiseSource'){
+        document.getElementById('emailJobWiseSourceId1_err').className="noerror";
+        if(document.getElementById('cntJobWiseSourceMisEmailId').value>=no)
+        {
+            document.getElementById('emailJobWiseSourceId1_err').className="error";
+            document.getElementById('emailJobWiseSourceId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addJobWiseSourceEmailId', obj);
+        }
+    }
+    else if(reportType == 'employee'){
+        document.getElementById('emailEmployeeId1_err').className="noerror";
+        if(document.getElementById('cntEmployeeMisEmailId').value>=no)
+        {
+            document.getElementById('emailEmployeeId1_err').className="error";
+            document.getElementById('emailEmployeeId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addEmployeeEmailId', obj);
+        }
+    }
+    else if(reportType == 'jobWiseStatus'){
+        document.getElementById('emailJobWiseStatusId1_err').className="noerror";
+        if(document.getElementById('cntJobWiseStatusMisEmailId').value>=no)
+        {
+            document.getElementById('emailJobWiseStatusId1_err').className="error";
+            document.getElementById('emailJobWiseStatusId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addJobWiseStatusEmailId', obj);
+        }
+    }
+    else if(reportType == 'employeeRefBy'){
+        document.getElementById('emailEmployeeRefById1_err').className="noerror";
+        if(document.getElementById('cntEmployeeRefByEmailId').value>=no)
+        {
+            document.getElementById('emailEmployeeRefById1_err').className="error";
+            document.getElementById('emailEmployeeRefById1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','addEmployeeRefByEmailId', obj);
+        }
+    }
+    else if(reportType == 'AllReferrals'){
+        document.getElementById('AllReferralsById_err').className="noerror";
+        if(document.getElementById('cntAllReferralsMisEmailId').value>=no)
+        {
+            document.getElementById('AllReferralsById_err').className="error";
+            document.getElementById('AllReferralsById_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','allReferralsByEmailId', obj);
+        }
+    }
+    else if(reportType == 'StatusWiseReferrals'){
+        document.getElementById('StatusWiseReferralsById_err').className="noerror";
+        if(document.getElementById('cntStatusWiseReferralsMisEmailId').value>=no)
+        {
+            document.getElementById('StatusWiseReferralsById_err').className="error";
+            document.getElementById('StatusWiseReferralsById_err').innerHTML="You can not add more than "+no+"email ids.";
+        }else{
+            modalwin('400','200','statusWiseReferralsByEmailId', obj);
+        }
+    }
+    else{
+        document.getElementById('emailId_err').style.display='';
+        document.getElementById('emailId_err').className="noerror";
+        document.getElementById('emailId1_err').className="noerror";
+        if(document.getElementById('cntMisEmailId').value>=no){
+            document.getElementById('emailId1_err').className="error";
+            document.getElementById('emailId1_err').innerHTML="You can not add more than "+no+"email ids.";
+        }
+        else{
+            modalwin('400','200','addEmailId', obj);
+        }
+    }
+}
+function addMisEmailId(isSuper)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                cnt = parseInt(document.getElementById('cntMisEmailId').value);
+                cnt++;
+                document.getElementById('cntMisEmailId').value=cnt;
+                showEmailIdLink(isSuper);
+            }
+        }
+    }
+    document.getElementById('emailId_err').className="noerror";
+    if(trim(document.getElementById('emailId').value)=="")
+    {
+        document.getElementById('emailId_err').className="error";
+        document.getElementById('emailId_err').innerHTML="Please enter an Email Id.";
+    }
+    else if(!validateEmailAddr(document.getElementById('emailId').value))
+    {
+        document.getElementById('emailId_err').className="error";
+        document.getElementById('emailId_err').innerHTML="Please enter a valid Email Id.";
+    }
+    else if(document.getElementById('cntMisEmailId').value>="4")
+    {
+        document.getElementById('emailId_err').className="error";
+        document.getElementById('emailId_err').innerHTML="You can not add more than 4 Email Ids.";
+    }
+    else if (checkDuplicateEmailId(document.getElementById('emailId').value))
+    {
+        document.getElementById('emailId_err').className="error";
+        document.getElementById('emailId_err').innerHTML="This Email Id already exists.";
+    }
+    else
+    {
+        var emailId=document.getElementById('emailId').value;
+        document.getElementById('misJPEmails').innerHTML+="<div class='cls' id='"+emailId+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+"' onClick='javascript:delMisEmailId(this,"+isSuper+");'>Delete</a>&nbsp;]</div>";
+        hidemodal();
+        var queryString = "?emailId="+ encodeURIComponent(emailId);
+        var requestPath = getRequestPath();
+        submitRequest.open("GET", requestPath+"/Job/addMisEmailId"+queryString, true);
+        submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        submitRequest.send(null);
+    }
+}
+
+function KeyCheck(evt) {
+    evt = (evt) ? evt : ((event) ? event : null);
+    var evver = (evt.target) ? evt.target : ((evt.srcElement)
+        ?evt.srcElement : null );
+    var keynumber = evt.keyCode;
+    if(keynumber=="13"){
+        addMisEmailId();
+    }
+}
+function KeyCheckRef(evt,isSuper, reportType) {
+    evt = (evt) ? evt : ((event) ? event : null);
+    var evver = (evt.target) ? evt.target : ((evt.srcElement)
+        ?evt.srcElement : null );
+    var keynumber = evt.keyCode;
+    if(keynumber=="13"){
+        addRefMisEmailId(isSuper, reportType);
+    }
+}
+function delMisEmailId(obj,isSuper)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                cnt = parseInt(document.getElementById('cntMisEmailId').value);
+                cnt--;
+                document.getElementById('cntMisEmailId').value=cnt;
+                showEmailIdLink(isSuper);
+            }
+        }
+    }
+    var id=(obj.id);
+    len=id.length;
+    var emailId=id.slice(3,len);
+    document.getElementById(emailId).style.display="none";
+    document.getElementById(emailId).parentNode.removeChild(document.getElementById(emailId));
+    var queryString = "?emailId="+ encodeURIComponent(emailId);
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/Job/deleteMisEmailId"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function delRefMisEmailId(obj,isSuper, reportType)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                if(reportType == 'usage'){
+                    cnt = parseInt(document.getElementById('cntMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntMisEmailId').value=cnt;
+                }
+                else if(reportType == 'AllReferralsIJP'){
+                    cnt = parseInt(document.getElementById('cntAllReferralsMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntAllReferralsMisEmailId').value=cnt;
+
+                }
+                else if(reportType == 'jobWiseStatusIJP'){
+                    cnt = parseInt(document.getElementById('cntJobWiseStatusMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntJobWiseStatusMisEmailId').value=cnt;
+
+                }
+                else if(reportType == 'jobWiseSource'){
+                    cnt = parseInt(document.getElementById('cntJobWiseSourceMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntJobWiseSourceMisEmailId').value=cnt;
+                }
+                else if(reportType == 'employee'){
+                    cnt = parseInt(document.getElementById('cntEmployeeMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntEmployeeMisEmailId').value=cnt;
+
+                }
+                else if(reportType == 'jobWiseStatus'){
+                    cnt = parseInt(document.getElementById('cntJobWiseStatusMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntJobWiseStatusMisEmailId').value=cnt;
+
+                }
+                else if(reportType == 'employeeRefBy'){
+                    cnt = parseInt(document.getElementById('cntEmployeeRefByEmailId').value);
+                    cnt--;
+                    document.getElementById('cntEmployeeRefByEmailId').value=cnt;
+
+                }
+                else if(reportType == 'AllReferrals'){
+                    cnt = parseInt(document.getElementById('cntAllReferralsMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntEmployeeRefByEmailId').value=cnt;
+
+                }
+                else if(reportType == 'StatusWiseReferrals'){
+                    cnt = parseInt(document.getElementById('cntStatusWiseReferralsMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntEmployeeRefByEmailId').value=cnt;
+
+                }
+                else{
+                    cnt = parseInt(document.getElementById('cntClosureMisEmailId').value);
+                    cnt--;
+                    document.getElementById('cntClosureMisEmailId').value=cnt;
+
+                }
+
+                showEmailIdLink(isSuper, reportType);
+            }
+        }
+    }
+    var id=(obj.id);
+    len=id.length;
+    var emailId=id.slice(3,len);
+    document.getElementById(emailId).style.display="none";
+    document.getElementById(emailId).parentNode.removeChild(document.getElementById(emailId));
+    var queryString = "?emailId="+ encodeURIComponent(emailId.slice(0, (emailId.length-reportType.length)))+"&reportType="+reportType;
+    var requestPath = getRequestPath();
+    submitRequest.open("GET", requestPath+"/Job/deleteRefMisEmailId"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+
+function unblock(blockDur, objLl) {
+    if(blockDur<=0 && !objLl){
+        gbi('dnBlk').checked=true
+        gbi('blockDuration').disabled=true;
+    }
+
+    else if(objLl<0){
+        gbi('dnBlk').checked=true
+        gbi('blockDuration').disabled=true;
+    }
+    else{
+        gbi('blkResf').checked=true;
+        gbi('blockDuration').disabled=false;
+        gbi('blockDuration').value=(parseInt(objLl)+1) || blockDur;;
+    }
+}
+
+function getBlockUnblockResponse(index)
+{
+    var blockDuration, msg;
+    var jobId = document.getElementById('jobId') ? document.getElementById('jobId').value : 0;
+    var projectId = document.getElementById('projectId') ? document.getElementById('projectId').value : 0;
+    var queryString = jobId ? "jobId=" + jobId : projectId ? "projectId=" + projectId : "";
+    var requestPath = getRequestPath();
+    var submitRequest = getXmlHttpObject();
+
+    if(document.getElementById('blockDuration').disabled==false){
+        blockDuration = document.getElementById('blockDuration').value;
+    }
+    else blockDuration = 0;
+
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                if(trim(response) == "OK"){
+                    hidemodal();
+                    document.getElementById('cnfrmmsg').innerHTML = '';
+                    document.getElementById('greenmessAutoRef').style.display = '';
+                    if (blockDuration == 0){
+                        msg = "Responses unblocked successfully!";
+                        ceID1.parentNode.style.display='block';
+                        ceID1.rel = '-1';
+                        var el = document.getElementById("manDup");
+                        if(!el){
+                            ceID1.innerHTML = "Block Responses";
+                        }
+                        else {
+                            ceID1.innerHTML = "Enable";
+                        }
+                        ceID1.parentNode.style.display='';
+                    }
+                    else {
+                        msg = "Responses successfully blocked!";
+                        ceID1.parentNode.style.display='block';
+                        var el = document.getElementById("manDup");
+                        if(!el){
+                            ceID1.innerHTML="Modify Responses";
+                        }
+                        else {
+                            ceID1.innerHTML="Disable";
+                        }
+                        if(index >= 0 && !gbi('blockDuration').disabled) {
+                            ceID1.rel = index;
+                        }
+                        else {
+                            ceID1.rel = '-1';
+                        }
+                        ceID1.parentNode.style.display='';
+                    }
+                    document.getElementById('greenmess').innerHTML = msg;
+                }
+                else {
+                    hidemodal();
+                    document.getElementById('errormess').style.display = '';
+                    document.getElementById('error_delete').innerHTML = "Error in blocking responses.";
+                }
+                unblock(blockDuration);
+            }
+        }
+    }
+    submitRequest.open("GET", requestPath+"/JobListing/blockResponse?duration="+blockDuration+"&"+queryString, true);
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+}
+function trim(stringToTrim) { //for removing first and last white space of the string
+    if(stringToTrim)
+        return stringToTrim.replace(/^\s+|\s+$/g,"");
+    else
+        return stringToTrim;
+}
+
+
+function test()
+{
+    var leftCnt = document.getElementById('jobQtyLeft').value;
+    var d = new Date();
+    var compId = document.getElementById('id_companyId').value;
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                return true;
+            }
+        }
+    }
+    var queryString = "?compId="+compId+"&leftCnt="+leftCnt+"&d="+encodeURIComponent(date);
+    var requestPath = getRequestPath();
+    if (modulName && modulName == 'Offline') {
+        submitRequest.open("GET", devOffpath+"/ajaxSetPostJobTime"+queryString, true);
+    }
+    else {
+        submitRequest.open("GET", requestPath+"/Job/ajaxSetPostJobTime"+queryString, true);
+    }
+    submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    submitRequest.send(null);
+    return true;
+}
+function getRelatedConceptSuggestion(url,keywords,module, autoTagFlag)
+{
+    //keywords = keywords.replace('/[\s]+/gi',' ');
+    var xmlhttp;
+    // document.getElementById('keyword').value= keywords.replace(/ +(?= )/g,'');
+    var keywordValue;
+    if(document.getElementById('tagValArr')){
+        keywordValue=document.getElementById('tagValArr').value;
+    }
+    else{
+        keywordValue=document.getElementById('keyword').value;
+    }
+
+    if(document.getElementById(keywordValue.indexOf('<')!=-1 || keywordValue.indexOf('>')!=-1)){
+        if(document.getElementById('tagValArr')){
+            document.getElementById('tagValArr').value= keywordValue.replace(/</g,' ');
+            document.getElementById('tagValArr').value= keywordValue.replace(/>/g,' ');
+        }
+        else{
+            document.getElementById('keyword').value= keywordValue.replace(/</g,' ');
+            document.getElementById('keyword').value= keywordValue.replace(/>/g,' ');
+        }
+        gbi("notifyHTMLTags").style.display="block";
+    }
+    else{
+        gbi("notifyHTMLTags").style.display="none";
+    }
+    if (window.XMLHttpRequest)
+    {// code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp=new XMLHttpRequest();
+    }
+    else
+    {// code for IE6, IE5
+        xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange=function()
+    {
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+            RXML = xmlhttp.responseText;
+            arrRC = JSON.parse(RXML);
+            var xcount = 0;
+            var keywordSuggestions = new Array();
+            if(arrRC['rcentry']){
+                suggestorArray = arrRC['rcentry'];
+                var k=0;
+                xcount = suggestorArray.length;
+            }
+            /* if(xcount > 7){
+             xcount=7;
+             }*/
+            for (var i=0;i<xcount;i++)
+            {
+                var li = document.createElement("li");
+                var keywordRel;
+                var re= /<[^><]*>/g;
+                tempKeyword = suggestorArray[i].replace(re, "");
+                keywordRel = tempKeyword.replace(/'/g,"");
+                keywordSuggestions[k++]=keywordRel;
+            }
+            if(keywords==''|| keywords=="Use Complete words. Eg: Type Customer Executive, not Cust. Exec."){
+                document.getElementById('sugg').style.display="none";
+                gbi('viewSugg').style.display ='none'
+
+            }
+            if(keywords!='' && keywords!="Use Complete words. Eg: Type Customer Executive, not Cust. Exec."){
+                loadSuggestions('sugg','viewSugg','keyword',keywordSuggestions,'suggLink',module);
+            }
+        }
+    }
+
+    word=keywords.split(',');
+    if (undefined != autoTagFlag && autoTagFlag == 1)
+        queryword=word[0];
+    else
+        queryword=word[word.length-1];
+    xmlhttp.open("GET",url+"?keywordsForRelatedConcepts="+encodeURIComponent(queryword)+"&xhr=1",true);
+    xmlhttp.send();
+
+}
+
+
+function loadSuggestions(sugLayer, moreLayer, obj,rcArr,suggLnk,module){
+    var getListEle;
+    var listEle = gbi(sugLayer).getElementsByTagName('div');
+//  if(gbi(sugLayer).value=='' || gbi(sugLayer).value=='Use Complete words. Eg: Type Customer Executive, not Cust. Exec.')
+    var addListArr=[];
+    listEle[0].innerHTMl = '';
+    if(gbi(moreLayer).style.display=='none' && rcArr.length!=0) gbi(sugLayer).style.display = 'block';
+    else if(rcArr.length==0){
+        gbi(sugLayer).style.display = 'none'
+    }
+    var ele = '';
+    var a = rcArr.length;
+    if(gbi(obj) && gbi(obj).value != ''){
+        // gbi(obj).style.display = 'none';
+        // gbi(suggLnk).style.display = 'inline-block';
+        // gbi(suggLnk).innerHTML = (gbi(obj).value).replace(/&/g, '&amp;');
+        //Tarun
+        //gbi(obj).value =  (gbi(obj).value).replace(/&/g, '&amp;');
+    }
+    if(a>0){
+        for(i=0; i<a; i++){
+            ele+="<a href='javascript:void(0)'>" + rcArr[i] + "</a> ";
+            addListArr.push(rcArr[i]);
+        }
+
+        listEle[0].innerHTML = ele;
+        getListEle = gbi(listEle[0].id).getElementsByTagName('a');
+        listEvnt(getListEle, addListArr, obj,suggLnk,module);
+    }
+}
+
+
+
+function listEvnt(suggList, addedArr, inpObj,keyword,module){
+    var pNode = suggList[0].parentNode.parentNode;
+    var keywordValue;
+    if(document.getElementById('tagValArr')){
+        keywordValue=document.getElementById('tagValArr').value;
+    }
+    else{
+        keywordValue=document.getElementById('keyword').value;
+    }
+    for(j=0; j<suggList.length; j++){
+        var curEle = suggList[j];
+        curEle.onclick=function(){
+            //alert(this.innerHTML);
+            if(document.getElementById('tagValArr')){
+                if(document.getElementById('keyword').value.length > 0)
+                    keywordValue=document.getElementById('tagValArr').value+","+document.getElementById('keyword').value;
+                else{
+                    keywordValue=document.getElementById('tagValArr').value;
+                }
+            }
+            else{
+                keywordValue=document.getElementById('keyword').value;
+            }
+
+            if((keywordValue.length + this.innerHTML.length) <= 250){
+                if(document.getElementById('keyword').value!='Use Complete words. Eg: Type Customer Executive, not Cust. Exec.'){
+                    if(module=="Online")
+                        logKeywordSuggestorUsage(this.innerHTML);
+                    try{
+                        // gbi(inpObj).focus();
+                        // gbi(inpObj).value="";
+                        if(gbi(inpObj).value==""){
+                            gbi(inpObj).value+=this.innerHTML.replace('&amp;','&');
+                        } else {
+                            gbi(inpObj).value+=',' + this.innerHTML.replace('&amp;','&');
+                        }
+                        // gbi(inpObj).style.display='block';
+                        // gbi(inpObj).innerHTML+=',' + this.innerHTML;
+
+                        if(gbi('sugg').style.display=="block"){
+                            gbi('removeKwdSugg').focus();
+                        }
+                        else{
+                            gbi('keyword').focus();
+                        }
+                        addedArr.splice(this, 1);
+                        if(addedArr.length==0){
+                            // gbi(suggLnk).style.display = 'none';
+                            var obj1 = gbi(inpObj);
+                            obj1.style.display='';
+                            //obj1.focus();
+                        }
+                        this.parentNode.removeChild(this);
+                        if(addedArr.length == 0) {
+                            pNode.style.display = 'none';
+                            gbi('keyword').focus();//set focus back to input field.
+                        }
+                    }
+                    catch(e){}
+                }
+                else
+                    gbi('sugg').style.display="none";
+            }
+            else{
+                gbi('kwdlimit').style.display="block";
+            }
+        }
+    }
+
+}
+
+function swapKwd(obj, kwdId){
+    gbi(kwdId).style.display='inline-block';
+    obj.style.display='none';
+    setTimeout(function(){gbi(kwdId).focus()}, 200);
+}
+
+
+function fcsKwd(obj){
+    var val=obj.value;
+    obj.value='';
+    if(val)
+        obj.value= val;
+}
+
+
+function logKeywordSuggestorUsage(keyword){
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function()
+    {
+        if(submitRequest.readyState == 4)
+        {
+            if(submitRequest.status == 200){
+
+            }
+        }
+    }
+    submitRequest.open("GET",AJAX_REQUEST_URL+"/Job/logKeywordSuggestor?keyword="+keyword, true);
+    submitRequest.send();
+}
+function removeHTMLTags(htmlString){
+    if(htmlString){
+        var mydiv = document.createElement("div");
+        mydiv.innerHTML = htmlString;
+
+        if (document.all) // IE Stuff
+        {
+            return mydiv.innerText;
+
+
+        }
+        else // Mozilla does not work with innerText
+        {
+            return mydiv.textContent;
+        }
+    }
+}
+
+function getRPAjaxQueryString(){
+
+    var companyId = document.getElementById('companyId').value;
+    var subCategoryId = document.getElementById('subCategoryId').value;
+    var queryString = "";
+    var reqElements = new Array();
+    var cntr=0;
+    try{
+        elements=eval("document.jpFirstPage.getElementsByTagName('input')");
+
+        //comment start
+        for(n=0; n < elements.length; n++)
+        {
+            if(elements[n].type=="text"){
+                if(elements[n].value != '') {
+                    reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                    cntr++;
+                }
+            }
+            else if(elements[n].type=="hidden"){
+                if(elements[n].value != '') {
+                    reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                    cntr++;
+                }
+            }
+            else if(elements[n].type=="radio" && elements[n].checked==true) {
+                if(elements[n].value != '') {
+                    reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                    cntr++;
+                }
+            }
+            else if(elements[n].type=="checkbox" && elements[n].checked==true) {
+                if(elements[n].name=='responseFilterChkBox') {
+                    reqElements[cntr] = "responseFilter::"+encodeURIComponent('locFilter');
+                    cntr++;
+                }
+                else if(elements[n].value != '') {
+                    reqElements[cntr] = elements[n].name+"::"+encodeURIComponent(elements[n].value);
+                    cntr++;
+                }
+            }
+            else if(elements[n].type=="checkbox" && elements[n].checked==false && elements[n].name == 'responseFilterChkBox') {
+                reqElements[cntr] = "responseFilter::"+encodeURIComponent('noFilter');
+                cntr++;
+            }
+        }
+        //comment end
+
+        var pageElemsForAjaxForm = mapToOldValue(1);
+        var pageElemVal;
+
+
+        for(n=0;n<pageElemsForAjaxForm.length;n++)
+        {
+            reqElements[cntr] = pageElemsForAjaxForm[n];
+            cntr++;
+        }
+
+        //comment start
+        cntr=reqElements.length;
+        selectArr=eval("document."+objFormName+".getElementsByTagName('select')");
+        for(n=0;n<selectArr.length;n++) {
+            arrSelect = selectArr[n].options;
+            nameSelect = selectArr[n].name;
+            if(nameSelect != 'city' && nameSelect != 'addcountry') {
+                for(m=0;m<arrSelect.length;m++) {
+                    if(arrSelect[m].selected == true) {
+                        reqElements[cntr] = nameSelect + "::"+ encodeURIComponent(arrSelect[m].value);
+
+                        cntr++;
+                    }
+                }
+            }
+        }
+        //comment end
+
+        cntr=reqElements.length;
+
+        //comment start
+        var textAreaArr=document.getElementsByTagName('textarea');
+        for(var m=0;m < textAreaArr.length;m++) {
+            if (FCKeditorAPI != undefined && gbi(textAreaArr[m].id+'___Frame') != undefined) {
+                var textareaValue =  getEditorHTML(textAreaArr[m].id, true);
+            }
+            else
+                var textareaValue = textAreaArr[m].value;
+            if(textareaValue != '') {
+                reqElements[cntr]=textAreaArr[m].name+"::"+encodeURIComponent(textareaValue);
+                cntr++;
+            }
+        }
+        cntr=reqElements.length;
+        //comment end
+    }
+    catch(e){}
+
+    var queryString='';
+
+    for(sCntr=0;sCntr<reqElements.length;sCntr++)
+    {
+        tempReqArr = reqElements[sCntr].split('::');
+        reqParamName = tempReqArr[0];
+        reqParamVal = tempReqArr[1];
+
+
+
+        if(reqParamName == "email[]" || reqParamName == "collectResponseMethod" || reqParamName == "autoFwdEmail[]") {
+            queryString += reqParamName+"="+reqParamVal+"&";
+        }
+
+    }
+    return queryString;
+}
+
+var timeout;
+
+function getUserRP(attachFlag){
+    if (undefined != attachFlag && attachFlag == 1) {
+        applyLoader ('attach');
+        queryString = "collectResponseMethod=attach&rpEmail[]="+document.getElementById("recProfEmail").value;
+    } else {
+        if (document.getElementById("recProfEmail").value != "")
+            return;
+        applyLoader ('attach');
+        queryString = getRPAjaxQueryString();
+    }
+    if(timeout) { clearTimeout(timeout); }
+
+    timeout = setTimeout(function() {
+        $n(document).ajaxReq({
+            type:'get',
+            async:'true',
+            datatype:'text',
+            data:queryString,
+            url:AJAX_REQUEST_URL+"/API.php/Job/getRPDetails",
+            success:function(resp){
+                RpData =  JSON.parse(resp);
+                respType = RpData['respType'];
+                respType = "attach";
+                removeExistingRPData(respType);
+                removeLoader(respType);
+                cntRp = RpData['RPDetails'].length;
+                i=0;
+                for(i=0; i<cntRp; i++){
+                    RpVcard = RpData['RPDetails'][i];
+                    if(!RpVcard['sample']){
+                        //      console.log(RpVcard);
+                        placeRPData(RpVcard, respType, i+1);
+                        if (document.getElementById("recProfEmail").value == "")
+                            document.getElementById("recProfEmail").value = RpVcard['Email'];
+                        if(isPV == "1"){
+                            $n("#recPrf").html("Recruiter profile attached");
+                        }
+                    }else{
+                        placeRPData(RpVcard, respType,0);
+                        $n("#recPrf").html("Currently no recruiter profile attached");
+                    }
+                }
+            }
+        });
+    },1000);
+
+}
+
+function removeExistingRPData(respType){
+    /*if(respType == 'eapps'){
+     $n('#eappsRpVcard1').addClass('noerror');
+     $n('#eappsRpVcard2').addClass('noerror');
+     $n('#eappsRpVcard0').addClass('noerror');
+     }else{
+     //if(respType == 'email'){
+     $n('#emailRpVcard1').addClass('noerror');
+     $n('#emailRpVcard2').addClass('noerror');
+     $n('#emailRpVcard0').addClass('noerror');
+     // }
+     }*/
+    $n('#attachRpVcard1').addClass('noerror');
+    $n('#attachRpVcard2').addClass('noerror');
+    $n('#attachRpVcard0').addClass('noerror');
+}
+
+function placeRPData(RpVcard, respType, ind){
+    container = respType+'RpVcard'+ind;
+    nameCont = respType+'VcardName'+ind;
+    compCont = respType+'VcardEmp'+ind;
+    desigCont = respType+'VcardDesig'+ind;
+    photoCont = respType+'VcardPhoto'+ind;
+    locCont = respType+'VcardLoc'+ind;
+    previewLoc = respType+'Vcard'+ind;
+    $n('#'+container).removeClass('noerror');
+    $n('#'+nameCont).val(RpVcard["Name"]);
+    $n('#'+compCont).val(RpVcard["Company"]);
+    $n('#'+desigCont).val(RpVcard["Designation"]);
+    $n('#'+locCont).val(RpVcard["Location"]);
+    $n('#'+photoCont).val(RpVcard["Photo"]);
+    if(ind !=0){
+        $n('#'+previewLoc).html(RpVcard["Name"]+"'s ");
+    }
+}
+
+function applyLoader(resptype){
+    /*if(resptype=="eapps"){
+     $n('#eappsVcardHolder').hide();
+     $n('#sLoaderEapps').show();
+     }
+     else if(resptype=="email"){
+     $n('#emailVcardHolder').hide();
+     $n('#sLoaderEmail').currObj().style.display="block";
+     }*/
+
+    $n('#attachVcardHolder').hide();
+    $n('#sLoaderAttach').currObj().style.display="block";
+}
+
+function removeLoader(resptype){
+    /*if(resptype=="eapps"){
+     $n('#sLoaderEapps').hide();
+     $n('#eappsVcardHolder').show();
+     } else if(resptype=="email"){
+     $n('#sLoaderEmail').hide();
+     $n('#emailVcardHolder').show();
+     }*/
+    $n('#sLoaderAttach').hide();
+    $n('#attachVcardHolder').show();
+}
+
+/*Function to log button clicks on Confirmation Page*/
+function logButtonClicks(action){
+    timeout = setTimeout(function() {
+        $n(document).ajaxReq({
+            type:'get',
+            async:'true',
+            datatype:'text',
+            data:"buttonType="+action,
+            url:$n('#requestPath').val()+"/Job/logButtonClick",
+            success:function(resp){
+                return true;
+            }
+        });
+    },1000);
+}
+
+function refreshEappsTemplates(elem){
+    if(typeof elem == "undefined") return false;
+    $n(document).ajaxReq({
+        type:'get',
+        async:'true',
+        datatype:'text',
+        data:"",
+        url:AJAX_REQUEST_URL+"/Job/refreshQuestionnaire",
+        success:function(resp){
+            data = JSON.parse(resp);
+            var selBox=$n('#'+elem).html('');
+            for(var x=0;x<data.length;x++){
+                var op = $n('<option>');
+                op.attr('value',data[x].value);
+                op.html(data[x].text);
+                selBox.append(op);
+            }
+            showViewQuestionnaire(elem);
+        }
+    });
+}
+
+function addRefMisEmailId(isSuper, reportType)
+{
+    var submitRequest = getXmlHttpObject();
+    submitRequest.onreadystatechange = function() {
+        if (submitRequest.readyState==4)
+        {
+            if (submitRequest.status == 200)
+            {
+                var response = new String(submitRequest.responseText);
+                if(reportType == 'usage'){
+                    cnt = parseInt(document.getElementById('cntMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntMisEmailId').value=cnt;
+                }
+                else if(reportType=='AllReferralsIJP'){
+                    cnt = parseInt(document.getElementById('cntAllReferralsMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntAllReferralsMisEmailId').value=cnt;
+                }
+                else if(reportType == 'jobWiseStatusIJP'){
+                    cnt = parseInt(document.getElementById('cntJobWiseStatusMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntJobWiseStatusMisEmailId').value=cnt;
+                }
+                else if(reportType == 'jobWiseSource'){
+                    cnt = parseInt(document.getElementById('cntJobWiseSourceMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntJobWiseSourceMisEmailId').value=cnt;
+                }
+                else if(reportType == 'employee'){
+                    cnt = parseInt(document.getElementById('cntEmployeeMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntEmployeeMisEmailId').value=cnt;
+                }
+                else if(reportType == 'jobWiseStatus'){
+                    cnt = parseInt(document.getElementById('cntJobWiseStatusMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntJobWiseStatusMisEmailId').value=cnt;
+                }
+                else if(reportType == 'employeeRefBy'){
+                    cnt = parseInt(document.getElementById('cntEmployeeRefByEmailId').value);
+                    cnt++;
+                    document.getElementById('cntEmployeeRefByEmailId').value=cnt;
+                }
+                else if(reportType=='AllReferrals'){
+                    cnt = parseInt(document.getElementById('cntAllReferralsMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntAllReferralsMisEmailId').value=cnt;
+                }
+                else if(reportType=='StatusWiseReferrals'){
+                    cnt = parseInt(document.getElementById('cntStatusWiseReferralsMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntStatusWiseReferralsMisEmailId').value=cnt;
+                }
+                else{
+                    cnt = parseInt(document.getElementById('cntClosureMisEmailId').value);
+                    cnt++;
+                    document.getElementById('cntClosureMisEmailId').value=cnt;
+
+                }
+                showEmailIdLink(isSuper, reportType);
+            }
+        }
+    }
+    var emailId, emailIdErr, emailCnt;
+    if(reportType=='usage'){
+        emailId = document.getElementById('emailId').value;
+        emailIdErr = document.getElementById('emailId_err');
+        emailCnt = document.getElementById('cntMisEmailId').value;
+    }
+    else if(reportType=='AllReferralsIJP'){
+        emailId = document.getElementById('emailAllReferralsById').value;
+        emailIdErr = document.getElementById('emailAllReferralsById_err');
+        emailCnt = document.getElementById('cntAllReferralsMisEmailId').value;
+    }
+    else if(reportType=='jobWiseStatusIJP'){
+        emailId = document.getElementById('emailJobWiseStatusId').value;
+        emailIdErr = document.getElementById('emailJobWiseStatusId_err');
+        emailCnt = document.getElementById('cntJobWiseStatusMisEmailId').value;
+    }
+    else if(reportType=='jobWiseSource'){
+        emailId = document.getElementById('emailJobWiseSourceId').value;
+        emailIdErr = document.getElementById('emailJobWiseSourceId_err');
+        emailCnt = document.getElementById('cntJobWiseSourceMisEmailId').value;
+    }
+    else if(reportType=='employee'){
+        emailId = document.getElementById('emailEmployeeId').value;
+        emailIdErr = document.getElementById('emailEmployeeId_err');
+        emailCnt = document.getElementById('cntEmployeeMisEmailId').value;
+    }
+    else if(reportType=='jobWiseStatus'){
+        emailId = document.getElementById('emailJobWiseStatusId').value;
+        emailIdErr = document.getElementById('emailJobWiseStatusId_err');
+        emailCnt = document.getElementById('cntJobWiseStatusMisEmailId').value;
+    }
+    else if(reportType=='employeeRefBy'){
+        emailId = document.getElementById('emailEmployeeRefById').value;
+        emailIdErr = document.getElementById('emailEmployeeRefById_err');
+        emailCnt = document.getElementById('cntEmployeeRefByEmailId').value;
+    }
+    else if(reportType=='AllReferrals'){
+        emailId = document.getElementById('emailAllReferralsById').value;
+        emailIdErr = document.getElementById('emailAllReferralsById_err');
+        emailCnt = document.getElementById('cntAllReferralsMisEmailId').value;
+    }
+    else if(reportType=='StatusWiseReferrals'){
+        emailId = document.getElementById('emailStatusWiseReferralsById').value;
+        emailIdErr = document.getElementById('emailStatusWiseReferralsById_err');
+        emailCnt = document.getElementById('cntStatusWiseReferralsMisEmailId').value;
+    }
+    else{
+        emailId = document.getElementById('emailClosureId').value;
+        emailIdErr = document.getElementById('emailClosureId_err');
+        emailCnt = document.getElementById('cntClosureMisEmailId').value;
+    }
+
+    no = 0;
+    if(isSuper !=0){
+        no = 4;
+    }else{
+        no = 1;
+    }
+
+    emailIdErr.className="noerror";
+    if(trim(emailId)=="")
+    {
+        emailIdErr.className="error";
+        emailIdErr.innerHTML="Please enter an Email Id.";
+    }
+    else if(!validateEmailAddr(emailId))
+    {
+        emailIdErr.className="error";
+        emailIdErr.innerHTML="Please enter a valid Email Id.";
+    }
+    else if(emailCnt>=no)
+    {
+        emailIdErr.className="error";
+        emailIdErr.innerHTML="You can not add more than "+no+" Email Ids.";
+    }
+    else if (checkDuplicateEmailId(emailId+reportType, reportType))
+    {
+        emailIdErr.className="error";
+        emailIdErr.innerHTML="This Email Id already exists.";
+    }
+    else
+    {
+        //var emailId=document.getElementById('emailId').value;
+        if(reportType == 'usage'){
+            document.getElementById('misJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'jobWiseSource'){
+            document.getElementById('misJobWiseSourceJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'AllReferralsIJP'){
+            document.getElementById('misAllReferralsByEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'jobWiseStatusIJP'){
+            document.getElementById('misJobWiseStatusJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'employee'){
+            document.getElementById('misEmployeeJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'jobWiseStatus'){
+            document.getElementById('misJobWiseStatusJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'employeeRefBy'){
+            document.getElementById('misEmployeeRefByEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'AllReferrals'){
+            document.getElementById('misAllReferralsByEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else if(reportType == 'StatusWiseReferrals'){
+            document.getElementById('misStatusWiseReferralsByEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        else{
+            document.getElementById('misClosureJPEmails').innerHTML+="<div class='cls' id='"+emailId+reportType+"'><br />"+emailId+" &nbsp;[&nbsp;<a href='javascript:void(0);' class='font10'  id='del"+emailId+reportType+"' onClick='javascript:delRefMisEmailId(this,"+isSuper+",\""+reportType+"\");'>Delete</a>&nbsp;]</div>";
+        }
+        hidemodal();
+        var queryString = "?emailId="+ encodeURIComponent(emailId)+"&reportType="+reportType;
+        var requestPath = getRequestPath();
+        submitRequest.open("GET", requestPath+"/Job/addRefMisEmailId"+queryString, true);
+        submitRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        submitRequest.send(null);
+    }
+}
+
+function fetchRPDetailsAttach () {
+    if (document.getElementById("recProfEmail").value != "") {
+        getUserRP(1);
+    }
+}
+
+function autoTagKeywordMakesense(post,jobDesc){
+    $n(document).ajaxReq({
+        type:'post',
+        async:'true',
+        datatype:'text',
+        data:"post="+encodeURIComponent(post)+"&description="+encodeURIComponent(jobDesc),
+        url:AJAX_REQUEST_URL+"/Job/getMakesenseAutoTagKeyword",
+        success:function(resp){
+            data = JSON.parse(resp);
+            keywordArr = data["skills"];
+            if (keywordArr.length > 0) {
+                for(var kwd in keywordArr)
+                    createTagFromInput($("#tagContainer"), 'usertag', keywordArr[kwd], $("#tagCont"));
+                clearPredictions ();
+                tooltip('We have pre-filled some keyword suggestions for you. You can add/remove the keywords as required. You can also remove all keyword suggestions by clicking "Remove all suggestions" link', 'keyword', '580px');
+            }
+        }
+    });
+}
+
+function saveRemoveAllClick () {
+    if (jpAppName == "Offline")
+        req_uri = devOffpath + "/saveKeywordRemoveAllClick";
+    else
+        req_uri = AJAX_REQUEST_URL + "/Job/saveKeywordRemoveAllClick";
+    $n(document).ajaxReq({
+        type:'get',
+        async:'true',
+        datatype:'text',
+        data:"",
+        url:req_uri,
+        success:function(resp){
+            //click should be saved
+        }
+    });
+}
+
+
+function generateQuestionnaire(){
+    var xy;
+    minCTC = $n('#MinimumSalary').val();
+    maxCTC = $n('#MaximumSalary').val();
+    keywordsQuest = $n('#tagValArr').val();
+    minCTC = $n('#MinimumSalary').val();
+    maxCTC = $n('#MaximumSalary').val();
+    currency = $n('#currency').val();
+    minExp = $n('#MinimumExperience').val();
+    maxExp = $n('#MaximumExperience').val();
+    role = escape($n('#inpRoleContainerDD2').val());
+    if(typeof $n('#roleContainerDD2 .spSelradio').currObj().rel != undefined)
+        roleId = $n('#roleContainerDD2 .spSelradio').currObj().rel.replace('#','');;
+    locationArr = document.getElementById('naukContainerSelector2').children;
+    locations = new Array();
+
+    for(i=0; i<locationArr.length; i++){
+        xy = (locationArr[i].textContent)?(locationArr[i].textContent):(locationArr[i].innerText);
+        locations[i] = xy.trim();
+
+    }
+    if(isPV=="0"){
+        educationUGArr = document.getElementById('ugContainerSelector2').children;
+        educationPGArr = document.getElementById('pgContainerSelector2').children;
+    }
+    else{
+        educationUGArr = document.getElementById('ugContSelector2').children;
+        educationPGArr = document.getElementById('pgContSelector2').children;
+    }
+    if(isPV=="0"){
+        educationPPGArr = document.getElementById('ppgContainerSelector2').children;
+    }
+
+
+    eduUG = makeEducationArray(educationUGArr);
+    eduPG = makeEducationArray(educationPGArr);
+    if(isPV=="0"){
+        eduPPG = makeEducationArray(educationPPGArr);
+    }
+
+    education = {}
+    education['UG'] = eduUG;
+    education['PG'] = eduPG;
+    if(isPV=="0"){
+        education['Doctorate'] = eduPPG;
+    }
+
+    var urlToGo='';
+    if(jpAppName == 'Offline'){
+        urlToGo = JPOFFLURL;
+    }else{
+        urlToGo = AJAX_REQUEST_URL+"/Job";
+    }
+
+    $n(document).ajaxReq({
+        type:'get',
+        async:'true',
+        datatype:'text',
+        data:"keywords="+escape(keywordsQuest)+"&location="+escape(JSON.stringify(locations))+"&minCTC="+minCTC+"&maxCTC="+maxCTC+"&currency="+currency+"&minExp="+minExp+"&maxExp="+maxExp+"&role="+role+"&roleId="+escape(roleId)+"&education="+JSON.stringify(education),
+        url:urlToGo+"/getQuestionnaire",
+        success:function(resp){
+            var quest_data = '';
+            quest_data = resp;
+            quest_data = JSON.parse(quest_data);
+            var questType = quest_data['questionnaireType'];
+            delete quest_data['questionnaireType'];
+
+            //console.log(quest_data);
+            objectquest = Question({wraperid: '#questwrap', qustlimit: 10, jsondata:quest_data, maxansopt: 10,minansopt:2,validateRel: 'custom:8020,specialChar:8030',callBackfunc:mycallback, expandTupple: true});
+            objectquest.questionnaireType = questType;
+            checkboxSwitch();
+        }
+    });
+}
+
+function previewQuestionnaireList(){
+    var form = document.createElement("form");
+    form.setAttribute("method", "post");
+    var urlToGo='';
+    if(jpAppName == 'Offline'){
+        urlToGo = JPOFFLURL;
+    }else{
+        urlToGo = AJAX_REQUEST_URL+"/Job";
+    }
+
+    form.setAttribute("action", urlToGo+"/questionnairePreview");
+    form.setAttribute("target", "_blank");
+
+    var hiddenField = document.createElement("input");
+    hiddenField.setAttribute("type", "hidden");
+    hiddenField.setAttribute("name", "data");
+    hiddenField.setAttribute("value", JSON.stringify(objectquest.prejson));
+    form.appendChild(hiddenField);
+    document.body.appendChild(form);
+    form.submit();
+
+
+    // URL = AJAX_REQUEST_URL+"/Job/questionnairePreview?data="+JSON.stringify(objectquest.prejson);
+    // window.open(URL, '_blank');
+}
+
+function saveQuestionnaire(subcat){
+    respMethod ='';
+    if( document.getElementById("collectresp_eapps") && document.getElementById("collectresp_eapps").checked){
+        respMethod = "eapps";
+    }else if( document.getElementById("collectresp_SM") && document.getElementById("collectresp_SM").checked){
+        respMethod = "SM";
+    } else if (document.getElementById("collectresp_offl") && document.getElementById("collectresp_offl").checked){
+        respMethod = "offl";
+    } else if (document.getElementById("collectresp_custurl") && document.getElementById("collectresp_custurl").checked){
+        respMethod = "applyIntegration";
+    }
+
+    arrName = getQuestionnaireName();
+
+    if(arrName['TYPE']){
+        document.getElementById("saveQuesAs_err").innerHTML = '';
+        document.getElementById("saveQuesGen_err").innerHTML = '';
+        var companyid = document.getElementById('companyId').value;
+        var userid = document.getElementById('userId').value;
+        var urlToGo='';
+        if(jpAppName == 'Offline'){
+            urlToGo = JPOFFLURL;
+        }else{
+            urlToGo = AJAX_REQUEST_URL+"/Job";
+        }
+        $n(document).ajaxReq({
+            type:'post',
+            async:'true',
+            datatype:'text',
+            data:"companyId="+companyid+"&userId="+userid+"&data="+encodeURIComponent(JSON.stringify(objectquest.prejson))+"&respManager="+respMethod+"&qsName="+escape(arrName['NAME']),
+            url:urlToGo+"/questionnaireSave",
+            success:function(resp){
+                respData = JSON.parse(resp);
+                if(respData['status']){
+                    var createOption = $n("<option>");
+                    createOption.val(respData['questionnaireId']);
+                    createOption.html(arrName['NAME']);
+                    if(respMethod == 'eapps'){
+                        $n('#eappsTemplate').append(createOption);
+                        $n('#eappsTemplate').val(respData['questionnaireId']);
+                    } else if(respMethod == 'SM'){
+                        $n('#SMTemplate').append(createOption);
+                        $n('#SMTemplate').val(respData['questionnaireId']);
+                    } else if(respMethod == 'offl'){
+                        $n('#walkinTemplate').append(createOption);
+                        $n('#walkinTemplate').val(respData['questionnaireId']);
+                    } else if(respMethod == 'applyIntegration'){
+                        $n('#aiTemplate').append(createOption);
+                        $n('#aiTemplate').val(respData['questionnaireId']);
+                    }
+                    $n("#questionnaireType").val(objectquest.questionnaireType);
+                    submitJPForm(subcat);
+                }else{
+                    if(respData['errorType']=='qsName'){
+                        document.getElementById("saveQuesAs_err").innerHTML = respData['message'];
+                    }else{
+                        document.getElementById("saveQuesGen_err").innerHTML = respData['message'];
+                    }
+                }
+
+            }
+        });
+
+    }
+}
+
+
+/*Function to log skip clicks on Questionnaire LightBox*/
+function logSkipClicksQuestionnaire(skip, subCat){
+    if(document.getElementById("collectresp_eapps") && document.getElementById("collectresp_eapps").checked){
+        respMethod = "eapps";
+    }else if(document.getElementById("collectresp_SM") && document.getElementById("collectresp_SM").checked){
+        respMethod = "SM";
+    } else if (document.getElementById("collectresp_offl") && document.getElementById("collectresp_offl").checked){
+        respMethod = "offl";
+    } else if (document.getElementById("collectresp_custurl") && document.getElementById("collectresp_custurl").checked){
+        respMethod = "applyIntegration";
+    }
+    var urlToGo='';
+    if(jpAppName == 'Offline'){
+        urlToGo = JPOFFLURL;
+    }else{
+        urlToGo = AJAX_REQUEST_URL+"/Job";
+    }
+
+    timeout = setTimeout(function() {
+        $n(document).ajaxReq({
+            type:'get',
+            async:'true',
+            datatype:'text',
+            data:"respType="+respMethod+"&skipTime="+skip,
+            url:urlToGo+"/logQuestionnaireSkipped",
+            success:function(resp){
+                submitJPForm(subCat);
+                return true;
+            }
+        });
+    },1000);
+}
+
+function updateBlockActivity(companyId,isBlocked,type){
+    $n(document).ajaxReq({
+        type:'get',
+        async:'true',
+        datatype:'text',
+        data:"companyId="+companyId+"&isBlocked="+isBlocked+"&domType="+type,
+        url:OFFLURL+"/referralOps/blockActivity",
+        success:function(resp){
+            location.reload();
+            $n('#pageMessage').html("Activity done");
+        }
+    });
+}
+
+function deleteEmailDomain(companyId, domainName){
+    $n(document).ajaxReq({
+        type:'get',
+        async:'true',
+        datatype:'text',
+        data:"companyId="+companyId+"&domainName="+domainName,
+        url:OFFLURL+"/referralOps/deleteEmailDomain",
+        success:function(resp){
+            location.reload();
+            //   $n('#pageMessage').html("Activity done");
+        }
+    });
+}
+/*
+ function addEmailDomain(companyId, domainName){
+ $n(document).ajaxReq({
+ type:'get',
+ async:'true',
+ datatype:'text',
+ data:"companyId="+companyId+"&domainName="+domainName,
+ url:OFFLURL+"/referralOps/addEmailDomain",
+ success:function(resp){
+ location.reload();
+ //   $n('#pageMessage').html("Activity done");
+ }
+ });
+ }
+ */
+
+
+function getBlockDuration(jobId, objLl, projectId){
+    var projectId = (typeof projectId !== 'undefined') ?  projectId : 0;
+    var dataString = jobId ? "jobId="+jobId : projectId ? "projectId="+projectId : "";
+    $n(document).ajaxReq({
+        type:'post',
+        async:'true',
+        datatype:'text',
+        data:dataString,
+        url:getRequestPath()+"/JobListing/getBlockDuration",
+        success:function(resp){
+            blockDur = resp;
+            if(blockDur<=0 && !objLl){
+                gbi('dnBlk').checked=true
+                gbi('blockDuration').disabled=true;
+            }
+
+            else if(objLl<0){
+                gbi('dnBlk').checked=true
+                gbi('blockDuration').disabled=true;
+            }
+            else{
+                gbi('blkResf').checked=true;
+                gbi('blockDuration').disabled=false;
+                gbi('blockDuration').value=(parseInt(objLl)+1) || blockDur;;
+            }
+        }
+    });
+}

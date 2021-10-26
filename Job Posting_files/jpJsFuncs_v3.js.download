@@ -1,0 +1,695 @@
+function changeLink(whichLink) {
+  if(whichLink == "hv") {
+    if(document.getElementById('id_postHV'))
+      document.getElementById('id_postHV').innerHTML = "<strong>Post a Hot Vacancy</strong> | ";
+  }
+  else if(whichLink == "cl") {
+    if(document.getElementById('id_postCL'))
+      document.getElementById('id_postCL').innerHTML = "<strong>Post a Classified</strong> | ";
+  }
+  else if(whichLink == "mj") {
+    if(document.getElementById('id_manageJob'))
+      document.getElementById('id_manageJob').innerHTML = "<strong>Manage Jobs</strong>";
+  }
+  else if(whichLink == "mis") {}
+}
+function changePage_dump(obj, sid, fromWhere , tab) {
+  if(obj) {
+    if(obj.id == "id_ToppageChange") {
+      if(document.getElementById("id_pageChange")) {
+        document.getElementById("id_pageChange").value = obj.value;
+      }
+      if(document.getElementById("id_BottompageChange")) {
+        document.getElementById("id_BottompageChange").value = obj.value;
+      }
+    } else if (obj.id == "id_BottompageChange") {
+      if(document.getElementById("id_pageChange")) {
+        document.getElementById("id_pageChange").value = obj.value;
+      }
+      if(document.getElementById("id_ToppageChange")) {
+        document.getElementById("id_ToppageChange").value = obj.value;
+      }
+    }
+    if(document.getElementById('id_srchFilterPostBy'))
+      document.getElementById('id_srchFilterPostBy').value = "yes";
+    if(document.getElementById('id_srchFilter'))
+      document.getElementById('id_srchFilter').value = "yes";
+  }
+
+  if(fromWhere == "posted") {
+    document.frmJobListing.action = devJPListing + "/JobListing/search?sessionId="+sid+"&tab="+tab;
+    document.frmJobListing.method = "post";
+    document.frmJobListing.submit();
+  } else if(fromWhere == "saved") {
+    document.frmSavedJobs.action = devJPListing + "/JobListing/saved?sessionId="+sid+"&tab="+tab;
+    document.frmSavedJobs.method = "post";
+    document.frmSavedJobs.submit();
+  } else if(fromWhere == "autoSaved") {
+    document.frmAutoSavedJobs.action = devJPListing + "/JobListing/autoSaved?sessionId="+sid+"&tab="+tab;
+    document.frmAutoSavedJobs.method = "post";
+    document.frmAutoSavedJobs.submit();
+  }
+}
+
+function assignValues() {
+
+  var jobId = document.getElementById("jobId").value;
+  document.getElementById("refreshPattern").value = document.getElementById("refType"+jobId).value;
+
+  if(document.getElementById("refType"+jobId).value == "") {
+    document.getElementById("refreshPattern").value = "disable";
+    document.getElementById("refNow").checked = true;     
+  } else {
+    document.getElementById("refSchedule").checked = true;
+  }
+  if(document.getElementById("refreshPattern").value == "Monthly")
+  {
+  }
+  document.getElementById("stDate").value = document.getElementById("refStartDate"+jobId).value;
+  var refPattern = document.getElementById("refPattern"+jobId).value;
+  if (refPattern == "after")
+  {
+    document.getElementById("recurrenceEndAfter").checked = true;
+    document.getElementById("refCount").value = document.getElementById("refEndCount"+jobId).value;
+  } else {
+    document.getElementById("recurrenceEndOn").checked = true;
+    document.getElementById("date").value = document.getElementById("refEndDate"+jobId).value;
+  }
+}
+
+function fillValues_dump() {
+  document.getElementById("dateE").value = document.getElementById("recurrenceEndOn").value; 
+  // remove dateE
+  document.getElementById("fileId").value = document.getElementById("jobId").value;
+  document.getElementById("refPattern").value = document.getElementById("refreshPattern").value;
+  if (document.getElementById("recurrenceEndAfter").checked  == true)
+  {   
+    document.getElementById("recurrenceEnd").value = "after";
+    document.getElementById("refEndValue").value = document.getElementById("refCount").value;
+  }
+  else
+  {
+    document.getElementById("recurrenceEnd").value = "on";    
+    document.getElementById("refEndValue").value = document.getElementById("date").value;
+  }
+  if (document.getElementById("checkRefresh").checked  == true)
+    document.getElementById("checkRefreshVal").value = "Y";
+  else
+    document.getElementById("checkRefreshVal").value = "N";
+
+  if (document.getElementById("refNow").checked == true)
+    document.getElementById("currentRefStatus").value = "Y";
+  else
+    document.getElementById("currentRefStatus").value = "N";  
+}
+
+function showdrop_dump(layerid) {
+  document.getElementById(layerid).style.display='block';
+}
+function hidedrop_dump(layerid) {
+  document.getElementById(layerid).style.display='none';
+}
+
+function changeJobState(obj, sid,tab) {
+  if(obj) {
+    if(obj.id == "id_Topalljobs") {
+      document.getElementById("id_Bottomalljobs").value = obj.value;
+    } else if (obj.id == "id_Bottomalljobs") {
+      document.getElementById("id_Topalljobs").value = obj.value;
+    }
+    document.getElementById('id_srchFilter').value = "yes";
+    document.getElementById('id_srchFilterPostBy').value = "yes";
+  }
+
+  if(tab == null)
+    tab = '';
+
+  document.frmJobListing.action = devJPListing + "/JobListing/search?tab="+tab;
+  document.frmJobListing.method = "post";
+  document.frmJobListing.submit();
+}
+
+function fetchJobsByAuthor(obj, sid,tab) {
+  if(obj) {
+    if(obj.id == "id_ToppostBy") {
+      document.getElementById("id_BottompostBy").value = obj.value;
+    } else if (obj.id == "id_BottompostBy") {
+      document.getElementById("id_ToppostBy").value = obj.value;
+    }
+    document.getElementById('id_srchFilterPostBy').value = "yes";
+  }
+
+  document.frmJobListing.action = devJPListing + "/JobListing/search?tab="+tab;
+  document.frmJobListing.method = "post";
+  document.frmJobListing.submit();
+}
+
+function CheckCheckAll_dump(fmobj,status) {
+  if(fmobj == 'document.frmJobListing')
+    var fmobj = document.frmJobListing;
+  else if(fmobj == 'document.frmSavedJobs')
+    var fmobj = document.frmSavedJobs;
+  else if(fmobj == 'document.frmAutoSavedJobs')
+    var fmobj = document.frmAutoSavedJobs;
+
+  var TotalBoxes = 0;
+  var TotalOn = 0;
+
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if (e.type=='checkbox' && e.getAttribute("checkAllGroup") == 1) {
+      if(status==true) {
+        e.checked = true;
+        if(document.getElementById('selectAll1'))
+        {
+          document.getElementById('selectAll').checked=true;
+        }
+        if(document.getElementById('selectAll'))
+        {
+          document.getElementById('selectAll1').checked=true;
+        }
+      }
+      else {
+        e.checked = false;
+        if(document.getElementById('selectAll')) {
+          document.getElementById('selectAll1').checked=false;
+        }
+        if(document.getElementById('selectAll1')) {
+          document.getElementById('selectAll').checked=false;
+        }
+      }
+    }
+  }
+}
+
+function validateCheckBoxStatus_dump(appType) {
+  switch(appType) {
+    case 'delete':
+      var message = "Please select atleast 1 job to "+appType+".";
+      break;
+    case 'share':
+      var message = "Please select atleast 1 job to "+appType+".";
+      break;
+    case 'unshare':
+      var message = "Please select atleast 1 job to "+appType+".";
+      break;
+    default:
+      var message = "Please select atleast 1 job";
+      break;
+  }
+  var arrDeleteEle = document.getElementById('checkBoxes').getElementsByTagName('input');
+  var checkCount = 0;
+  for(i=0;i<arrDeleteEle.length;i++)
+  {
+    if(arrDeleteEle[i].type == "checkbox" && arrDeleteEle[i].checked == true && arrDeleteEle[i].value != "checkbox") {
+      checkCount++;
+    }
+  }
+
+  if(checkCount > 0)
+    return true;
+  else
+  {
+    if(document.getElementById('greenmess'))
+      document.getElementById('greenmess').style.display = "none";
+    document.getElementById('errormess').style.display = "block";
+    document.getElementById('error_delete').innerHTML = message;
+    return false;
+  }
+}
+
+  function toggleShare_dump(sid, currPg, totalPg, formName, option) {
+    if(currPg > totalPg)
+      currPg = totalPg;
+    else if ( currPg == totalPg)
+      currPg = totalPg - 1;
+
+    document.getElementById('id_pageno').value = currPg;
+
+    if(formName == 'frmJobListing')
+      document.forms[formName].action = devJPListing + "/JobListing/clickedOption?sessionId="+sid+"&option="+option;
+
+    document.forms[formName].method = "post";
+    document.forms[formName].submit();
+  }
+
+  function trim_dump(stringToTrim) { //for removing first and last white space of the string
+    if(stringToTrim)
+      return stringToTrim.replace(/^\s+|\s+$/g,"");
+    else
+      return stringToTrim;
+  }
+
+
+function setTime1(obj, prop, getLN, val1){
+  idGlobal=1;
+  var speed=4;
+  if(navigator.appName=='Microsoft Internet Explorer')
+    speed=1;
+  var getUL=gebtn(obj, 'ul');
+  if(getLN>val1-2){
+    getUL[0].style[prop]=getLN+"px";
+    getLN=getLN-32;
+    setTimeout('setTime1("'+obj+'", "'+prop+'", '+ getLN +', '+val1+')', speed);
+        }
+        else{
+        getUL[0].style[prop]=val1+"px";
+        idGlobal=0;
+        }
+
+        }
+        function setTime2(obj, prop, getLN, val1){
+        idGlobal=1;
+        var speed=4;
+        if(navigator.appName=='Microsoft Internet Explorer')
+        speed=1;
+        var getUL=gebtn(obj, 'ul');
+        if(getLN>Math.abs(val1+2)){
+        getUL[0].style[prop]=-getLN+"px";
+        getLN=getLN-32;
+        setTimeout('setTime2("'+obj+'", "'+prop+'", '+ getLN +', '+val1+')', speed);
+          }
+          else{
+          getUL[0].style[prop]=val1+"px";
+          idGlobal=0
+          }
+          }
+
+function datevalid(tab)
+{
+  var stdate = document.getElementById('keyword5').value;
+  var endate = document.getElementById('keyword6666').value;
+  if(stdate && endate)
+  {
+    var currentDate = new Date();
+    var month = currentDate.getMonth() + 1;
+    if(String(month).length == 1)
+      month = '0' + month;
+
+    dte = currentDate.getDate();
+    if(String(dte).length == 1)
+      dte = '0' + dte
+        var date = currentDate.getFullYear() + "-" +month+"-"+dte;
+
+    if(endate > date || stdate > date)
+    {
+      alert("You can not select dates greater than the today's date. Please specify the valid dates.");
+      return false;
+    }
+    var retvalue = compareDates(stdate,'yyyy-MM-dd',endate,'yyyy-MM-dd');
+    if(retvalue == '-1')
+    {
+      alert("The dates do not seem valid. Please specify again.");
+      return false;
+    }
+    else if(retvalue == '1')
+    {
+      alert("The 'To' date can not be less than 'From' date. Please specify the valid dates.");
+      return false;
+    }
+    else
+    {
+      document.getElementById('id_srchFilter').value = "no";
+      document.getElementById('id_srchFilterPostBy').value = "no";
+      document.getElementById('id_isValid').value = "no";
+      execSearch(tab);
+    }
+  }
+  else
+  {
+    if((stdate && !endate) || (!stdate && endate))
+    {
+      alert("The dates do not seem valid. Please specify again.");
+      document.getElementById('id_isValid').value = "yes";
+      return false;
+    }
+    else
+    {
+      document.getElementById('id_srchFilter').value = "no";
+      document.getElementById('id_srchFilterPostBy').value = "no";
+      document.getElementById('id_isValid').value = "no";
+      execSearch(tab);
+    }
+  }
+
+  document.getElementById('id_srchFilter').value = "no";
+      document.getElementById('id_srchFilterPostBy').value = "no";
+  document.getElementById('id_isValid').value = "no";
+  execSearch(tab);
+}
+
+function compareDates_dump(date1,dateformat1,date2,dateformat2) {
+  var d1 = getDateFromFormat(date1, dateformat1);
+  var d2 = getDateFromFormat(date2, dateformat2);
+  if (d1 == 0 || d2 == 0)
+    return -1;
+  else if (d1 > d2)
+    return 1;
+  return 0;
+}
+
+function getDateFromFormat_dump(val,format) {
+  val = val+"";
+  format = format+"";
+  var i_val = 0;
+  var i_format = 0;
+  var c = "";
+  var token="";
+  var token2="";
+  var x,y;
+  var now=new Date();
+  var year=now.getYear();
+  var month=now.getMonth()+1;
+  var date=1;
+  var hh=now.getHours();
+  var mm=now.getMinutes();
+  var ss=now.getSeconds();
+  var ampm="";
+
+  while (i_format < format.length) {
+    c=format.charAt(i_format);
+    token="";
+    while ((format.charAt(i_format)==c) && (i_format < format.length)) {
+      token += format.charAt(i_format++);
+    }
+    if (token=="yyyy" || token=="yy" || token=="y") {
+      if (token=="yyyy") { x=4;y=4; }
+      if (token=="yy")   { x=2;y=2; }
+      if (token=="y")    { x=2;y=4; }
+      year=_getInt(val,i_val,x,y);
+      if (year==null) { return 0; }
+      i_val += year.length;
+      if (year.length==2) {
+        if (year > 70) { year=1900+(year-0); }
+        else { year=2000+(year-0); }
+      }
+    }
+    else if (token=="MMM"||token=="NNN"){
+      month=0;
+      for (var i=0; i<MONTH_NAMES.length; i++) {
+        var month_name=MONTH_NAMES[i];
+        if (val.substring(i_val,i_val+month_name.length).toLowerCase()==month_name.toLowerCase()) {
+          if (token=="MMM"||(token=="NNN"&&i>11)) {
+            month=i+1;
+            if (month>12) { month -= 12; }
+            i_val += month_name.length;
+            break;
+          }
+        }
+      }
+      if ((month < 1)||(month>12)){return 0;}
+    }
+    else if (token=="EE"||token=="E"){
+      for (var i=0; i<DAY_NAMES.length; i++) {
+        var day_name=DAY_NAMES[i];
+        if (val.substring(i_val,i_val+day_name.length).toLowerCase()==day_name.toLowerCase()) {
+          i_val += day_name.length;
+          break;
+        }
+      }
+    }
+    else if (token=="MM"||token=="M") {
+      month=_getInt(val,i_val,token.length,2);
+      if(month==null||(month<1)||(month>12)){return 0;}
+      i_val+=month.length;}
+    else if (token=="dd"||token=="d") {
+      date=_getInt(val,i_val,token.length,2);
+      if(date==null||(date<1)||(date>31)){return 0;}
+      i_val+=date.length;}
+    else if (token=="hh"||token=="h") {
+      hh=_getInt(val,i_val,token.length,2);
+      if(hh==null||(hh<1)||(hh>12)){return 0;}
+      i_val+=hh.length;}
+    else if (token=="HH"||token=="H") {
+      hh=_getInt(val,i_val,token.length,2);
+      if(hh==null||(hh<0)||(hh>23)){return 0;}
+      i_val+=hh.length;}
+    else if (token=="KK"||token=="K") {
+      hh=_getInt(val,i_val,token.length,2);
+      if(hh==null||(hh<0)||(hh>11)){return 0;}
+      i_val+=hh.length;}
+    else if (token=="kk"||token=="k") {
+      hh=_getInt(val,i_val,token.length,2);
+      if(hh==null||(hh<1)||(hh>24)){return 0;}
+      i_val+=hh.length;hh--;}
+    else if (token=="mm"||token=="m") {
+      mm=_getInt(val,i_val,token.length,2);
+      if(mm==null||(mm<0)||(mm>59)){return 0;}
+      i_val+=mm.length;}
+    else if (token=="ss"||token=="s") {
+      ss=_getInt(val,i_val,token.length,2);
+      if(ss==null||(ss<0)||(ss>59)){return 0;}
+      i_val+=ss.length;}
+    else if (token=="a") {
+      if (val.substring(i_val,i_val+2).toLowerCase()=="am") {ampm="AM";}
+      else if (val.substring(i_val,i_val+2).toLowerCase()=="pm") {ampm="PM";}
+      else {return 0;}
+      i_val+=2;}
+    else {
+      if (val.substring(i_val,i_val+token.length)!=token) {return 0;}
+      else {i_val+=token.length;}
+    }
+  }
+  if (i_val != val.length) { return 0; }
+  if (month==2) {
+    if ( ( (year%4==0)&&(year%100 != 0) ) || (year%400==0) ) { // leap year
+      if (date > 29){ return 0; }
+    }
+    else { if (date > 28) { return 0; } }
+  }
+  if ((month==4)||(month==6)||(month==9)||(month==11)) {
+    if (date > 30) { return 0; }
+  }
+  if (hh<12 && ampm=="PM") { hh=hh-0+12; }
+  else if (hh>11 && ampm=="AM") { hh-=12; }
+  var newdate=new Date(year,month-1,date,hh,mm,ss);
+  return newdate.getTime();
+}
+
+
+function _isInteger_dump(val) {
+  var digits="1234567890";
+  for (var i=0; i < val.length; i++) {
+    if (digits.indexOf(val.charAt(i))==-1) { return false; }
+  }
+  return true;
+}
+function _getInt_dump(str,i,minlength,maxlength) {
+  for (var x=maxlength; x>=minlength; x--) {
+    var token=str.substring(i,i+x);
+    if (token.length < minlength) { return null; }
+    if (_isInteger(token)) { return token; }
+  }
+  return null;
+}
+
+function execSearch(tab)
+{
+  if (tab==null)
+     tab='';
+  document.getElementById('id_srchFilter').value = "no";
+      document.getElementById('id_srchFilterPostBy').value = "no";
+  document.frmJobListing.action = devJPListing + "/JobListing/search?tab="+tab;
+    document.frmJobListing.method = "post";
+  document.frmJobListing.submit();
+}
+
+function validateDelete_dump()
+{
+  var arrDeleteEle = document.getElementById('checkBoxes').getElementsByTagName('input');
+  var checkCount = 0;
+  for(i=0;i<arrDeleteEle.length;i++)
+  {
+    if(arrDeleteEle[i].type == "checkbox" && arrDeleteEle[i].checked == true && arrDeleteEle[i].value != "checkbox") {
+      checkCount++;
+    }
+  }
+
+  if(checkCount > 0)
+    return true;
+  else
+  {
+    if(document.getElementById('greenmess'))
+      document.getElementById('greenmess').style.display = "none";
+    document.getElementById('errormess').style.display = "block";
+    document.getElementById('error_delete').innerHTML = "Please select atleast 1 job to delete.";
+    scroll(0,0);
+    //                alert("Please select atleast 1 job to delete.");
+    return false;
+  }
+}
+
+function countChecked(fmobj)
+{
+ if(fmobj == 'document.frmJobListing')
+    var fmobj = document.frmJobListing;
+  else if(fmobj == 'document.frmSavedJobs')
+    var fmobj = document.frmSavedJobs;
+  else if(fmobj == 'document.frmAutoSavedJobs')
+    var fmobj = document.frmAutoSavedJobs;
+
+  var TotalBoxes = 0;
+  var TotalOn = 0;
+  var arrSelectedID = new Array();
+
+  for (var i=0;i<fmobj.elements.length;i++) {
+    var e = fmobj.elements[i];
+    if (e.type=='checkbox' && e.getAttribute("checkAllGroup") == 1) {
+      if(e.checked == true)
+        arrSelectedID.push(fmobj.elements[i].value);
+    }
+  }
+  document.getElementById('jobId').value = arrSelectedID;
+}
+
+function validateRefresh()
+{
+  var arrRefreshEle = document.getElementById('checkBoxes').getElementsByTagName('input');
+  var checkCount = 0;
+  for(i=0;i<arrRefreshEle.length;i++)
+  {
+    if(arrRefreshEle[i].type == "checkbox" && arrRefreshEle[i].checked == true && arrRefreshEle[i].value != "checkbox") {
+      checkCount++;
+    }
+  }
+
+  if(checkCount > 0)
+    return true;
+  else
+  {
+    if(document.getElementById('greenmess'))
+      document.getElementById('greenmess').style.display = "none";
+    document.getElementById('errormess').style.display = "block";
+    document.getElementById('error_delete').innerHTML = "Please select atleast 1 job to refresh.";
+    scroll(0,0);
+    return false;
+  }
+}
+
+function subShareUnshare(sid,option,tab)
+{
+document.frmJobListing.action= devJPListing + "/JobListing/clickedOption?sessionId="+sid+"&option="+option+"&tab="+tab;
+document.frmJobListing.method = "POST";
+document.frmJobListing.submit();
+}
+
+function checkAutoRefNewJob_dump()
+{
+  var refreshOption=document.getElementById("refreshPattern").value;
+  if (refreshOption=="disable")
+  {
+ //   document.getElementById("every").disabled="disabled";
+    document.getElementById("after").disabled="disabled";
+    document.getElementById("recurrenceEndAfter").disabled="disabled";
+    document.getElementById("recurrenceEndOn").disabled="disabled";
+    document.getElementById("date").value = "";
+    document.getElementById("stDate").value = "";
+
+  }
+  else
+  {
+    document.getElementById("after").disabled="";
+    document.getElementById("recurrenceEndAfter").disabled="";
+    document.getElementById("recurrenceEndOn").disabled="";
+
+  }
+}
+
+function checkAutoRefreshOptions()
+{
+  var refreshOption=document.getElementById("refreshPattern").value;
+  document.getElementById('subRefresh').disabled = "";
+  
+  if(document.getElementById('refNow').checked)
+    document.getElementById('recurBox').style.display = 'none';
+  else document.getElementById('recurBox').style.display = '';
+
+  if (refreshOption=="disable")
+  {
+    document.getElementById('date_err').style.display ="none";
+    document.getElementById("refCount").disabled="disabled";
+    document.getElementById("recurrenceEndAfter").disabled="disabled";
+    document.getElementById("recurrenceEndOn").disabled="disabled";
+    //document.getElementById("date").disabled="disabled";
+    document.getElementById("date").value="";
+    document.getElementById("checkRefresh").disabled="disabled";
+    document.getElementById("checkRefresh").checked=false;
+    document.getElementById("recurrenceEndAfter").checked = true;
+    document.getElementById("calDisable").style.visibility = "hidden";
+    document.getElementById("cal4Disable").style.visibility = "hidden";   
+    document.getElementById("stDate").value="";
+
+  }
+  else
+  {
+
+    if (document.getElementById("recurrenceEndAfter").checked == true)
+      document.getElementById("calDisable").style.visibility = "hidden";
+    else
+      document.getElementById("calDisable").style.visibility = "";
+
+    document.getElementById("refCount").disabled="";
+    document.getElementById("cal4Disable").style.visibility = "";
+    document.getElementById("recurrenceEndAfter").disabled="";
+    document.getElementById("recurrenceEndOn").disabled="";
+    document.getElementById("checkRefresh").disabled="";
+  }
+  if (document.getElementById("recurrenceEndOn").checked == true)
+  {
+    document.getElementById("refCount").disabled="disabled";
+  }
+  else
+    document.getElementById("refCount").disabled="";
+
+}
+
+function disableRadioOptionManageJobs_dump()
+{
+  if (document.getElementById('recurrenceEndOn').checked == true)
+  {
+    document.getElementById("refCount").value="1";
+    document.getElementById("refCount").disabled="disabled";
+    document.getElementById("calDisable").style.visibility = "";
+  }
+  else
+  {
+    document.getElementById('date_err').style.display ="none";
+    document.getElementById("refCount").disabled="";
+    document.getElementById("date").value="";
+    document.getElementById("calDisable").style.visibility = "hidden";
+  }
+}
+
+function chkSelection()
+{
+ if(document.getElementById('id_hotjobs').checked== false  && document.getElementById('id_classified').checked== false )
+ {
+   document.getElementById('errormess').style.display = 'block';
+   document.getElementById('error_delete').innerHTML = "Please select atleast one job type to search";
+   return false;
+ }
+  return true;
+}
+
+function offlineJob(sid,ctrl)
+{
+ if(ctrl == 'top')
+   document.getElementById('id_BottompageChange').value = document.getElementById('id_ToppageChange').value
+ else document.getElementById('id_ToppageChange').value = document.getElementById('id_BottompageChange').value;
+ document.getElementById('resperpage').value = document.getElementById('id_BottompageChange').value;
+ document.frmOffline.action= devJPListing + "/JobListing/offline?sessionId="+sid;
+ document.frmOffline.submit();
+}
+
+function msgRefresh(frm)
+{
+ countChecked(frm);
+ var arrJobId = document.getElementById('jobId').value.split(",");
+ if (arrJobId.length > 1)
+   document.getElementById('msgMultiRefresh').innerHTML = 'A job Refresh utilizes Job Posting credit(s).</br> </br> Number of jobs to be refreshed: ' + arrJobId.length;
+ else if(arrJobId.length == 1)
+   document.getElementById('msgMultiRefresh').innerHTML = 'A job Refresh utilizes Job Posting credit(s).</br> </br> Job ID to be refreshed: '+document.getElementById('jobId').value;
+}
+ 
+ 
+

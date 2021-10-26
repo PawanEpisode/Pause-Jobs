@@ -1,0 +1,787 @@
+var varValid = false;
+var tagNameClicked = '';
+var Question = function(o){
+	
+	if(!(o && typeof o=='object')) {return false};		// handling arguments
+	
+	if(this instanceof Question){
+		
+		var t = this;					// dafault options
+			t.contid = o.wraperid;
+			t.questlimit = o.qustlimit || 10;
+			t.maxansopt = o.maxansopt || 10;
+			t.minansopt = o.minansopt || 2;
+			t.prejson = o.jsondata || {};
+			t.validrel = o.validateRel || false;
+			t.callBack = o.callBackfunc || false;
+			t.expandTup = o.expandTupple || false;
+			quest = null;
+		var quest = {
+			defaultans : t.minansopt,
+			maxansallow : t.maxansopt,
+			questCount : t.questlimit,
+			prejson : t.prejson,
+			prefillarr : [],
+			editCase : false,
+			activeID : false,
+			usedids :[],
+			deltedid : [],
+			answarr : ['1','2','3','4','5','6','7','8','9','10'],
+			ansNdel : (t.maxansopt-t.minansopt),
+			expandQuesTup : t.expandTup,
+			addAnotherFlag : true,
+
+			ansType:['Radio Button','Check Box','Custom List (Dropdown)','Text Area'],
+			
+			
+			checkIndex : function(arr,ck){
+				
+				if(!Array.prototype.indexOf){
+							for(var i = 0, j = arr.length; i < j; i++) {
+								if (arr[i] === ck) { return i; }
+							}
+							return -1;
+				}else{
+						return arr.indexOf(ck);
+					
+				}
+				
+			},
+			
+			makeStructure : function(){
+				var ileft = this.questCount - this.usedids.length,did = 231;
+				while(this.deltedid.length < ileft){
+					var newid = (this.deltedid.length)?(this.deltedid[this.deltedid.length-1])*1+did:did;
+					newid = newid.toString();
+					var checker = this.checkIndex(this.usedids,newid);
+					if(checker == '-1'){
+						this.deltedid.push(newid);
+					}else{
+						did++;
+					}
+				}
+			},
+			
+			objnotEmpty : function(obj){
+				for(var key in obj) {
+					if(obj.hasOwnProperty(key))return true;
+				}
+				return false;
+			 },
+			
+			makeoList : function(){
+						
+						this.orderlist = $n('<ul>');
+						$n(t.contid).click(this.bindevents);
+						//$n(t.contid).addEvent('click',this.bindevents);
+						return this.orderlist;
+				},
+			
+			domGenrator : function(tag,clss,attrs,content){
+						if(tag){
+							var tagname = $n('<'+tag+'>');
+							
+								(clss)?tagname.addClass(clss):'';
+								(attrs)?tagname.attr(attrs):'';
+								
+								if(!content) { return tagname }
+								if(tag != 'input'){
+									tagname.append(content);
+								}else{
+									tagname.val(content);
+								}
+								return tagname;
+						}
+						
+			},
+			
+			addAnother : function(){ //Function to create "add another question"
+						if(t.expandTup){
+							if(this.addAnotherFlag){
+								var wraper = this.domGenrator("div","cle ml25 addAnotherC",{'id':'addanotherTop'});
+								this.questleftTop = this.domGenrator("span","fl db pt8  ml10");
+								this.addanotherTop = this.domGenrator("a","fl quesBtn",{'rel':'addNewTop','href':'javascript:void(0)'},"Add Another Question");
+								wraper.append(this.addanotherTop).append(this.questleftTop);
+								this.addAnotherFlag=false;	
+								return wraper;
+							}
+						}
+					
+						var wraper = this.domGenrator("div","cle ml25 addAnotherC",{'id':'addanother'});
+						this.questleft = this.domGenrator("span","fl db pt8  ml10");
+                        if(t.expandTup){
+						    this.addanother = this.domGenrator("a","fl quesBtn",{'rel':'addNew','href':'javascript:void(0)'},"Add Another Question");
+                        }
+                        else{
+                            this.addanother = this.domGenrator("a","blue_btn fl quesBtn",{'rel':'addNew','href':'javascript:void(0)'},"Add Another Question");
+                        }
+						wraper.append(this.addanother).append(this.questleft);
+						return wraper;
+						
+				},
+				
+			
+			prefillListgen : function(k,jsn){  //Create edit scenario
+							if(t.expandTup){
+								//console.error("ssss");
+								var j = jsn,
+									anslength = j['Ans'].length+' Answers',
+									anstype = this.ansType[j['Andt']],
+									
+									
+										oli = $n('<li>').attr({'id':'li_'+k}),
+										
+										//Create Right Block
+										rblock = this.domGenrator("div","ques_tupple_right"),
+										quesDiv  =  this.domGenrator("div","auto_ques_ques",false),
+                                        para = this.domGenrator("p",false,false,j['Qust']),
+										
+										//Create Include Block
+										includeBlock = this.domGenrator("div","ques_tupple_left"),
+										includeText = this.domGenrator("p","ml35 pb5 f14", false, "Include");
+										includeA = this.domGenrator("a","switchN", {'href':'javascript:void(0)'});
+										
+										
+										eblock = this.domGenrator("span","auto_ques_opt"),
+										//editEM = this.domGenrator("em","editIc fl mr5"),
+										//deleteEM = this.domGenrator("em","delIcon fl mr5"),
+										edit =  this.domGenrator("a","editIc",{'rel':'edit','href':'javascript:void(0)'},'Edit'),
+										deleti =  this.domGenrator("a","delIcon",{'rel':'del','href':'javascript:void(0)'}, 'Delete');
+									
+							           /*New*/
+                                        if(j['IncludeQust']==0){
+                                            includeInput = this.domGenrator("input","on_off", {'type':'checkbox', 'rel':'', 'value':'off', 'id':'include_'+k});
+                                            j['IncludeQust']=0;
+                                            edit.css({'visibility':'hidden'});
+                                        }
+                                        else{
+                                            includeInput = this.domGenrator("input","on_off", {'type':'checkbox', 'rel':'', 'value':'on', 'id':'include_'+k});
+                                            j['IncludeQust']=1;
+                                            edit.css({'visibility':''});
+                                        }
+                                        /*New*/
+ 	
+								//Appending Include Switch	
+								includeA.append(includeInput),
+								includeBlock.append(includeText);							
+								oli.append(includeBlock),								
+								includeBlock.append(includeA);
+								
+								eblock.append(edit).append(deleti);
+								//edit.append(editEM);
+								//deleti.append(deleteEM);
+                                para.append(eblock);
+								quesDiv.append(para);
+								rblock.append(quesDiv);
+								oli.append(rblock);
+								eblock.hide();							
+								
+								
+								
+								
+								optBlock = this.domGenrator("div","pt16");
+								selectBox = this.domGenrator("select","stxt w324",false);
+								
+								for(var i=0; i<j['Ans'].length; i++){
+									if(j['Andt'] == 0){ //Radio Button
+										this.createChkRadio('radio', j['Ans'][i], k, i);										
+									}
+									else if(j['Andt'] == 1){ //Check Box
+										this.createChkRadio('checkbox', j['Ans'][i], k, i);
+									}
+									else if(j['Andt'] == 2){ //Select Box	
+										selectOpt = this.domGenrator("option",false,{'value':k+'select'+i},j['Ans'][i]);																										
+									}
+									if(j['Andt'] == 2){
+										selectBox.append(selectOpt);
+										optBlock.append(selectBox);	
+									}
+								}								
+								if(j['Andt'] == 3){ //Textarea	
+									var textarea = this.domGenrator("textarea","tbox",{'id':k+'answerTextArea'});
+									optBlock.append(textarea);
+								}
+								rblock.append(optBlock);
+							}
+							else{
+								var j = jsn,
+									anslength = j['Ans'].length+' Answers',
+									anstype = this.ansType[j['Andt']],
+									
+									
+										oli = $n('<li>').attr({'id':'li_'+k}),
+										lblock = this.domGenrator("div","lblock"),
+										strq  =  this.domGenrator("strong",false,false,j['Qust']),
+										emt  =  this.domGenrator("em",false,false,anstype+' | '+anslength),
+										
+										eblock = this.domGenrator("div","eblock"),
+										edit =  this.domGenrator("a",false,{'rel':'edit','href':'javascript:void(0)'},'Edit'),
+										duplicate =  this.domGenrator("a",false,{'rel':'dup','href':'javascript:void(0)'},'Duplicate'),
+										deleti =  this.domGenrator("a","delIcon",{'rel':'del','href':'javascript:void(0)'});	
+									
+								eblock.append(edit).append(' | ').append(duplicate).append(' | ').append(deleti);
+								lblock.append(strq).append(' | ').append(emt);	
+								
+								oli.append(lblock).append(eblock);
+							}
+													
+							
+
+					if(this.orderlist.childrens('#li_'+k).length == 0){
+						this.orderlist.append(oli);
+					}else{
+						this.orderlist.childrens('#li_'+k).html($n.trim(oli.html()));
+					}
+					
+					if(t.expandTup){
+						var editEle = $n("#li_"+k + " .editIc");
+						var switchEle = $n("#li_"+k + " .switchN");
+						switchEle.addEvent("click",function(){
+							if(j['IncludeQust'] == 0){
+								j['IncludeQust'] = 1;
+                                editEle.css({'visibility':''});
+							}
+							else{
+								j['IncludeQust'] = 0;
+                                editEle.css({'visibility':'hidden'});
+							}
+						})
+					}
+				
+			},
+			
+			createChkRadio : function(type, text, nodeId, loopCount){ //Create checkbox and radio button for expanded tupple state
+				this.optType = this.domGenrator("input","chk fl",{'type':type,'id':nodeId+type+loopCount,'name':nodeId+type});
+				optLabel = this.domGenrator("label",false,{'for':nodeId+type+loopCount});
+                optLabel.append(this.optType);
+                optLabel.append(text);
+                optBlock.append(optLabel);
+			},
+			
+			checkPrefill : function(){
+					
+					if(this.objnotEmpty(this.prejson)){
+						
+						for(var i in this.prejson){
+							if(this.questCount > this.prefillarr.length){
+								this.prefillListgen(i,this.prejson[i]);
+								this.prefillarr.push(i);
+								
+								this.usedids.push(i);
+							}
+						}
+						
+					}
+			},
+
+            cancelQuest : function(element){
+
+                               var jid  = this.getID(element);
+
+                               if(this.activeID == jid){this.activeID = false;this.editCase = false;}
+
+                               indx = this.checkIndex(this.prefillarr,jid);
+
+                               if(indx == -1){
+
+                                      this.usedids.splice(indx,1);
+
+                                      this.deltedid.push(jid);
+
+                                      this.orderlist.childrens('#li_'+jid).remove();
+
+                               }
+
+                               else{
+
+                                      this.prefillListgen(jid,this.prejson[jid]);
+
+                                      checkboxSwitch();     
+
+                               }
+
+                       },
+			
+			bindevents :  function(e){
+						if (!e) var e = window.event;
+						(e.stopPropagation) ? e.stopPropagation() : e.cancelBubble = true;
+						element = e.target || e.srcElement;
+						if(element.nodeName.toLowerCase() == 'em'){							
+							element = element.parentNode;
+						}
+						if(element.nodeName.toLowerCase() == 'a' && $n(element).attr('rel')){
+							
+							var relatedTo = $n(element).attr('rel');
+								
+								switch(relatedTo){
+									case 'edit' : quest.addnewQuest('edited',element);break;
+									case 'dup'  : quest.addnewQuest('duplicated',element);break;
+									case 'addNew' : quest.addnewQuest();break;
+									case 'addNewTop' : quest.addnewQuest("addNewTop");break;
+                                    case 'cancel' : quest.cancelQuest(element);break;
+									//case 'saveQuest' : quest.saveQuest();break;
+									//case 'delTmp' : quest.addnewQuest();break;
+									case 'del' : quest.deleteQuest('delete',element);break;
+								}
+								
+								quest.updateQuestleft();
+								
+						}
+					
+			},
+			
+			addnewQuest : function(a,element){
+						var q = quest;
+                        this.duplicate = false;
+					if(!q.editCase){
+					var addEditHead = this.domGenrator("div","ques_subHead");
+					if(a == 'edited'){
+						var jid = this.getID(element);
+						this.editDOM();
+						this.setVal(jid);
+						if(t.expandTup)
+							this.ansTypes.childrens('input[type=radio]');
+						else
+							this.ansTypes.childrens('input[type=radio]').attr({'disabled':'disabled'})
+
+						this.orderlist.childrens('#li_'+jid).html('');
+						this.orderlist.childrens('#li_'+jid).append(this.editDom);
+                        addEditHead.html("Edit Question");
+					    $n("#QuestionAddEditId").prepend(addEditHead);	
+					}else if(a == 'duplicated' && this.deltedid.length != 0){
+                            var jid = this.getID(element);
+							nwid = this.deltedid.pop(),
+                                                        
+							newj = {};
+							this.usedids.push(nwid);
+							this.prefillarr.push(nwid);
+							newj = JSON.parse(JSON.stringify(this.prejson[jid]));
+							this.prejson[nwid] = newj;
+                            this.duplicate = true;
+							this.editDOM();
+							this.setVal(nwid);
+							this.ansTypes.childrens('input[type=radio]').removeAttr('disabled');
+							
+							var lis = $n('<li>').attr({'id':'li_'+nwid});
+							this.orderlist.append(lis.append(this.editDom));
+					
+					}else if(this.deltedid.length != 0){
+						var nwid = this.deltedid.pop();
+							this.usedids.push(nwid);
+
+							this.editDOM();
+							this.restVal(nwid);
+							var lis = $n('<li>').attr({'id':'li_'+nwid});
+							if(t.expandTup && a == "addNewTop"){
+								this.orderlist.prepend(lis.append(this.editDom));
+							}
+							else{
+								this.orderlist.append(lis.append(this.editDom));
+							}
+                            addEditHead.html("Add New Question");
+                            $n("#QuestionAddEditId").prepend(addEditHead);
+					}
+					
+					//console.log(window.validateit('QuestionAddEdit'));
+                    $n("#question_name").setFocus();
+                                    
+				if(a=='edited' || this.deltedid.length != 0){
+                                    commonValidator.validate({
+                                    formNames : 'QuestionAddEdit',
+                                    errors : commonErrList,
+                                    styles : { errorClass:'msg_errf',okClass:'ok',softMandClass:'softMand' } ,
+                                    submitButton : ['saveQuestionButton']
+                                    // fireDelay : 100
+                                    });
+				
+                            }}
+							if(this.objnotEmpty(this.prejson)==false){
+								this.addanotherTop.parent().hide()	
+							}
+							else{
+								this.addanotherTop.parent().show()	
+							}
+							
+							quest.checkAnswer();
+							
+							
+						
+			},
+			
+			saveQuest : function(){
+                                if(commonValidator.isValid('question_name')){
+                                	if(varValid){
+											var cTypenow = 'editSave';
+											if(this.prejson[this.activeID] == undefined){
+												this.prefillarr.push(this.activeID);
+												this.prejson[this.activeID] = {};
+												cTypenow = 'newSave';
+											} else {
+												this.prejson[this.activeID].category="";
+												this.prejson[this.activeID].categoryType="";
+												
+											}
+											if(this.duplicate){
+												cTypenow = 'newSave'
+											}
+											this.getVal();
+											var arn = [this.activeID,this.prejson[this.activeID]];
+											
+											setTimeout(function(){quest.prefillListgen.apply(quest,arn)},30);
+											this.handleCallback(cTypenow,this.activeID);
+											//(this.activeID)?window.validateit('QuestionAddEdit'):'';
+											this.editCase = false;
+											this.activeID = false;
+/*											if(this.objnotEmpty(this.prejson)==false){
+												this.addanotherTop.parent().hide()	
+											}
+											else{
+												this.addanotherTop.parent().show()	
+											}*/
+									}
+									
+                                }
+
+                        },
+			
+			deleteQuest :  function(a,element){
+				
+					var jid  = this.getID(element),
+						indx = this.checkIndex(this.prefillarr,jid);
+					if(this.activeID == jid){this.activeID = false;this.editCase = false;}
+					if(a == 'delete' && indx == -1){ 
+						this.usedids.splice(indx,1);
+						this.deltedid.push(jid);
+						this.orderlist.childrens('#li_'+jid).remove();
+						}
+						else if(a == 'delete' && indx != -1){
+						this.handleCallback('deleted',jid);
+						this.prefillarr.splice(indx,1);
+						this.usedids.splice(indx,1);
+						this.deltedid.push(jid);
+						delete this.prejson[jid];
+						this.orderlist.childrens('#li_'+jid).remove();	
+						}
+						if(this.deltedid.length == 1){							
+							this.addanother.parent().show();
+                            this.addanotherTop.parent().show();
+						}
+						if(this.objnotEmpty(this.prejson)==false){
+							this.addanotherTop.parent().hide();
+						}
+			},
+			
+			handleCallback : function(a,b){
+					if(t.callBack){
+						var oback = {};
+							oback['action'] = a;
+							oback['id'] = b;
+							oback['json'] = this.prejson[b];
+							t.callBack(oback);
+					}
+			},
+			
+			restVal : function(jid){
+				this.editCase = true;
+				this.activeID = jid;
+				this.editDom.childrens('#question_name').val('');
+                if(t.expandTup){
+                    this.mandchkb.currObj().checked = true;
+                }
+                else{
+    				this.mandchkb.currObj().checked = false;	
+                }
+				this.ansTypes.childrens('input[relTo=0]').currObj().checked = true;
+
+				this.ansSection.html('');
+				this.ansSection.append(this.populateAns(0));
+			},
+			
+			setVal : function(jid){
+				this.editCase = true;
+				this.activeID = jid;
+				this.editDom.childrens('#question_name').val(this.prejson[jid]['Qust']);
+				this.mandchkb.currObj().checked = (this.prejson[jid]['Mand'] == '1')?true:false;
+				this.ansTypes.childrens('input[relTo='+this.prejson[jid]["Andt"]+']').currObj().checked = true;
+						
+				this.ansSection.html('');
+				this.ansSection.append(this.populateAns(this.prejson[jid]["Andt"],this.prejson[jid]["Ans"]));
+			},
+			
+			getVal : function(){
+				var ansarry = [],prejson = this.prejson[this.activeID];
+				for(var a=0; a<this.ansSection.childrens('input[type=text]').length; a++){
+					var ansarr = this.ansSection.childrens('input[type=text]').eq(a).val().replace(/ +/gi, ' ');
+						ansarry.push(ansarr);
+				}
+				prejson['Qust'] = this.editDom.childrens('#question_name').val().replace(/ +/gi, ' ');
+				prejson['Mand'] = (this.mandchkb.currObj().checked)?1:0;
+				prejson['Andt'] = this.ansTypes.childrens('input:checked').attr('relto');
+				prejson['Ans'] = ansarry;
+			},
+			
+			editDOM : function(){
+				var dom = this.domGenrator;
+				var form = dom("form",false,{'name':'QuestionAddEdit','id':'QuestionAddEditId','method':'post'}),
+			
+				topwrap = dom("div","cle"),
+				qusthidden = dom("input",false,{'type':'hidden','id':'questionId','value':''}),
+				enyq =  dom("label",false,false,'Enter Your Question'),
+				questname = dom("input","itxt w700",{'type':'text','id':'question_name','name':'question_name','rel':t.validrel,'maxlength':'100'}),
+				questnerr = dom("div","fl mt5 erLbl",{'id':'question_name_err'}),
+
+				mandwrap = dom("div","qmandtory"),
+				
+				mandtext = dom("span",false,{'for':'mandatory'},"Mandatory Question"),
+				
+				answrap = dom("div"),
+				anslabl = dom("label",false,false,'Choose Answer Type:'),
+				
+				anblock = dom("div","answerBlock"),
+				anlable = dom("label",false,false,"Enter Your Answers:"),
+				
+				btnblock = dom("div","adbtn"),
+				btnsave =  dom("a","blue_btn fl",{'id':'saveQuestionButton','href':'javascript:void(0)'},'Save Question');
+                if(t.expandTup){
+                    btnremove = dom("a","ml10 fl mt5",{'rel':'cancel','href':'javascript:void(0)'},'Cancel');
+                }
+                else{
+    				btnremove = dom("a","ml10 fl mt5",{'rel':'del','href':'javascript:void(0)'},'Remove Question');
+                }
+				
+				this.mandchkb = dom("input","chk fl",{'type':'checkbox','id':'mandatory','name':'mandatory'}),
+				
+                btnsave.addEvent('click',function(){quest.saveQuest.call(quest)});
+                       
+				topwrap.append(qusthidden).append(enyq).append(questname).append(questnerr);
+				mandwrap.append(this.mandchkb).append(mandtext);
+				
+				btnblock.append(btnsave).append(btnremove);
+				
+				this.ansTypes = dom("div");
+				this.ansTypes.append(this.ansTypegen());
+				
+				this.ansTypes.childrens('input[type=radio]').addEvent('click',this.changeAnstype);    // addEvents to radio btns
+				
+				answrap.append(anslabl).append(this.ansTypes);
+				
+				this.ansSection = dom("div","answ cle",{'id':'enterAns_Id'});
+				//this.ansSection.append(this.populateAns(2));
+				anblock.append(anlable).append(this.ansSection);
+								
+				form.append(topwrap).append(mandwrap).append(answrap).append(answrap).append(anblock).append(btnblock);
+				
+				
+				this.editDom = form;
+			},
+			
+			populateAns : function(type,pf){
+				var tpe = type,
+					p  = pf;
+					if(tpe == 3){
+						this.retObj = $n('<div>');
+						var textarea = this.domGenrator("textarea","tbox disableBg",{'id':'answerTextArea','disabled':'disabled'}),
+							texterrd = this.domGenrator("div","fl mt5 erLbl",{'id':'answerTextArea_err'});
+							this.retObj.append(textarea).append(texterrd);
+					}else if(type == 0 || type == 1 || type == 2){
+						this.answarr = ['1','2','3','4','5','6','7','8','9','10'];
+						this.ansr_li = undefined;
+						
+						this.retObj = $n('<ul>').addClass('equestAns');
+						
+						if(p && p.length > 0){
+							for(var y = 0; y < p.length; y++){
+								var list = this.genrateListdata(this.answarr.pop(),p[y]);
+								this.retObj.append(list);
+							}
+							
+						}else{
+							//console.log("this.defaultans   ---   " + this.defaultans);
+							for(var y = 0; y < this.defaultans; y++){
+								var list = this.genrateListdata(this.answarr.pop());
+								this.retObj.append(list);
+							}
+						}
+
+						this.addmoreans();
+
+					}
+
+					return this.retObj;
+				
+			},
+			addmoreans :  function(){
+				if(typeof this.ansr_li == 'undefined'){
+				
+					this.ansr_li = this.domGenrator("li","pt8");
+					this.ansr_a = this.domGenrator("a","pl3",{'href':'javascript:void(0)'});
+					this.answrleft = this.domGenrator("span","ml10");
+					this.ansr_li.append(this.ansr_a).append(this.answrleft);
+					this.retObj.append(this.ansr_li);
+					
+					this.ansr_a.addEvent('click',this.checkAddmor);
+				}
+				var remain = this.answarr.length,
+					count = this.maxansallow;
+				if(count == remain){
+						this.ansr_a.html('Add New Answer');
+				}else if(count-1 >= remain){
+					this.ansr_a.html('Add Another Answer Box');
+				}
+				
+				if(remain == 0){
+					this.ansr_a.parent().hide();
+				}
+				this.answrleft.html('('+this.answarr.length+') more allowed');
+			
+			},
+			addnewansBlock : function(){
+				if(quest.answarr.length){
+					var list = quest.genrateListdata(quest.answarr.pop());
+					quest.retObj.currObj().insertBefore(list.currObj(),quest.ansr_li.currObj());
+					quest.addmoreans();
+				}
+				
+			},
+			checkdelete : function(){
+				var ansLen = quest.answarr.length,
+					ansNdel = quest.ansNdel;
+					if(ansLen >= ansNdel){return;}
+					quest.delnewansBlock($n(this));
+					if(ansLen == (ansNdel-1)){
+						$n(t.contid+' #enterAns_Id').childrens('.delIcon').css({'display':'none'});
+					}
+			},
+			checkAddmor : function(){
+				var ansLen = quest.answarr.length,
+					ansNdel = quest.ansNdel;
+				if(ansLen == ansNdel){
+					$n(t.contid+' #enterAns_Id').childrens('.delIcon').css({'display':'inline-block'});
+				}
+				quest.addnewansBlock($n(this));
+				if(ansLen > ansNdel){
+					$n(t.contid+' #enterAns_Id').childrens('.delIcon').css({'display':'none'});
+				}
+			},
+			checkAnswer : function(){
+				var ansLen = quest.answarr.length,
+					ansNdel = quest.ansNdel;
+				if(ansLen < (ansNdel-1)){
+					$n(t.contid+' #enterAns_Id').childrens('.delIcon').css({'display':'inline-block'});
+				}else if(ansLen >= ansNdel){
+					$n(t.contid+' #enterAns_Id').childrens('.delIcon').css({'display':'none'});
+				}
+			},
+			delnewansBlock : function(objthis){
+                    //if(quest.answarr.length >= 8){return;}
+					var elem = objthis;
+					var list = quest.genrateListdata(quest.answarr.push(elem.attr('currIndex')));
+					elem.parent().parent('li').remove();
+					quest.addmoreans();
+                    if(quest.answarr.length  == 1){
+						quest.ansr_a.parent().show();
+					}
+					//quest.delhide();
+			},
+			genrateListdata : function(a,b){
+					//console.warn("a    " + a);
+					var delCount = 0;
+					var nli = $n('<li>'),
+						ndi = $n('<div>'),
+						nac = this.domGenrator("a","delIcon",{'href':'javascript:void(0)','currIndex':a}),
+						inp = this.domGenrator("input","itxt w300",{'type':'text','id':'ansList'+a/*,'rel':t.validrel*/,'maxlength':'100'}),
+						nerr = this.domGenrator("div","fl mt5 erLbl",{'id':'ansList'+a+'_err'});
+						nac.addEvent('click',this.checkdelete);
+						if(b){
+							nac.attr({'preIndex':a});
+							inp.val(b);
+						}
+						
+						nli.append(ndi.append(inp).append(nac)).append(nerr);				
+						
+						return nli;
+			},
+			
+			ansTypegen : function(){
+				var uls = this.domGenrator("ul","antlist cle",{'id':'ansType_Id'});
+				for(var i=0;i<this.ansType.length;i++){
+						var lis = $n('<li>');
+						var inputs = this.domGenrator("input","f_check",{'type':'radio','name':'chooseType','title':this.ansType[i],'relTo':i});
+						(i==0)?inputs.currObj().defaultChecked = true:'';
+						uls.append(lis.append(inputs).append(this.ansType[i]));
+				}
+				return uls;
+			},
+			
+			changeAnstype : function(){
+				var typ = ($n(this).currObj().nodeName == 'INPUT')?$n(this).attr('relTo'):'';
+				if(typ){
+					var pfill = (quest.prejson[quest.activeID])?quest.prejson[quest.activeID]['Ans']:0;
+					quest.ansSection.html('');
+					quest.ansSection.append(quest.populateAns(typ,pfill));
+					quest.checkAnswer();
+				}
+			},
+			getID : function(elem){
+				while(elem.nodeName != 'LI'){ elem = elem.parentNode}
+				var elemtid = $n(elem).attr('id').split('_');
+				return elemtid[1];
+			},
+			
+			enalbleBtns : function(){
+				//quest.addanother.addEvent('click',this.addnewQuest);
+				this.editCase = false;
+			},
+			disableBtns : function(){
+				//quest.addanother.removeEvent('click',this.addnewQuest);
+				this.editCase = true;
+			},
+			
+			updateQuestleft : function(){
+				var remain = this.deltedid.length,
+					count = this.questCount;
+				if(count == remain){
+					this.addanother.html('Add New Question');
+				}else if(count-1 == remain){
+					this.addanother.html('Add Another Question');
+				}
+                if(remain == 0){
+					this.addanother.parent().hide();
+                    this.addanotherTop.parent().hide();
+				}
+				if(t.expandTup){
+					this.questleftTop.html('('+this.deltedid.length+') more questions allowed');					
+                    this.questleft.html('('+this.deltedid.length+') more questions allowed');
+				}
+                else{
+    				this.questleft.html('('+this.deltedid.length+') more');
+                }
+			}
+			//maxansfunc : function(){}
+			
+		};
+			
+		}else{
+			return new Question(o);
+		}
+		
+		
+		(function init(){
+			if(t.expandTup){
+				$n(t.contid).append(quest.addAnother()).append(quest.makeoList()).append(quest.addAnother());
+			}
+			else{
+				$n(t.contid).append(quest.makeoList()).append(quest.addAnother());
+			}
+			//$n(t.contid).append(quest.makeoList()).append(quest.addAnother());
+			quest.checkPrefill();
+			quest.makeStructure();
+			quest.updateQuestleft();
+			//quest.editDOM();
+			quest.enalbleBtns();
+			
+			
+		})();
+		
+		
+};

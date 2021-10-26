@@ -1,0 +1,357 @@
+chainingFunction.prototype.tagIt=function(params){
+    //handle user defined parameters
+    var hlpTxtId = params.hlpTxtId || null;
+    var hiddenName = params.name || alert("provide name for the hidden input");
+    var hiddenId = params.id || alert("provide id for the hidden input")
+        var isMandatory = params.mandatory || false;
+    var initTag = params.initTag || 0;
+    var tagInpId = params.tagInpId;
+    var tagLiId = params.tagLiId;
+    var tagContId = params.tagContId;
+    var currObject = this;
+    var tagArr =[];
+    var inputValueArr = [],index,currIndex,ipVal;
+    var isCtrl=false,isShift=false,rmvAll= false;
+    var clearAll = params.clearAll.clearSugg;
+    var removeAllId = params.clearAll.id;
+    Array.prototype.indexOf = function(obj, start) {
+        for (var i = (start || 0), j = this.length; i < j; i++) {
+            if (this[i] === obj) { return i; }
+        }
+        return -1;
+    }
+    currObject.init = function(){
+        var tagInputId = tagInpId;
+        var InputLiId = tagLiId;
+        var InputLi = $n("#"+InputLiId);
+        var bspaceCount = 0;
+        var leftKeyCount = 0;
+        if(initTag.length > 0){//handle case to create previosusly created tags.
+            $n("#"+hlpTxtId).hide();
+            currObject.show();
+            for(var i=0;i<initTag.length;i++){
+                currObject.createTag(null,initTag[i],null,InputLi);
+                currObject.validateOK(initTag[i]);
+            }
+        }
+	$n("#"+tagInputId).currObj().onkeyup =function(e){
+		if (!e) e = window.event;
+		kCd = e.keyCode || e.which
+//        $n("#"+tagInputId).addEvent('keyup',function(evt){
+                if(kCd == 17) isCtrl=false;//reset ctrl val on keyup
+                if(kCd == 16) isShift=false;//reset shift val on keyup
+                }
+
+	$n("#"+tagInputId).currObj().onkeydown =function(evt){
+		if (!evt) evt = window.event;
+		kCd = evt.keyCode || evt.which;
+                currObject.addRemoveErr(tagInputId,"remove"); 
+                var currSelTag = $n(".readyToRemove").first().html();
+                var tagsLen = $n(".tagList").length;
+                ipVal = $n("#"+tagInputId).val();
+                var currIdx = -1;  
+                if(currSelTag){                                                   
+                    for(var i=0;i<tagArr.length;i++)
+                    {
+                        if(tagArr[i]==(" "+currSelTag.toString())){
+                            currIdx = i;  
+                        }             
+                    }                                             
+                } 
+                if((kCd == 46) && (bspaceCount !=0 || leftKeyCount !=0) && ipVal == "" ){//handle backspace and left arrow with delete key
+                if(currIdx == tagArr.length-1){//removing the last element
+                	currObject.removeTag();
+                }else{//removing random tags
+                    currObject.removeTag(null,currIdx);
+                }
+                }
+                if(currIdx!=-1 && kCd == 8 && ipVal == "" ){
+                    currObject.removeTag(null,currIdx);
+                }
+                if(kCd == 17) isCtrl=true;//if ctrl
+                if(kCd == 16) isShift=true;//reset shift val on keyup
+                if(isCtrl == true && kCd == 65){//handle ctrl+A
+                    for(var i=0;i<tagsLen;i++){
+                        $n(".tagList").eq(i).addClass('remAll');     
+                    }
+                    rmvAll = true;
+                }
+                if((kCd == 8 || kCd == 46) && rmvAll == true){
+                    for(var i=0;i<tagsLen;i++){
+                        $n(".tagList").eq(i).remove();              
+                    }
+                    rmvAll = false;
+                    tagArr = [];//empty array once all tags are deleted.
+                    $n("#"+hiddenId).val("");
+                }
+                if(kCd == 188 || (isShift == false && kCd == 188) || kCd == 13 || kCd == 9 || (isShift == false && kCd == 9)){// allowed delimiters [comma,enter,tab,autocomplete]
+                    if(kCd!=9)$n.preventDefault(evt); //allow default behaviour for tab
+                    currObject.shouldCreateTag(evt,tagInputId,InputLi);
+                }
+                if((isShift == true && kCd == 188)||((isShift == true && kCd == 190)))$n.preventDefault(evt);
+                if(kCd == 8 && ipVal== "" && currIdx==-1){// if backspace
+                    leftKeyCount = 0;
+                    if(bspaceCount == 0){// just select the tag on first backspace
+                        $n(".tagList:last").addClass('readyToRemove');
+                        bspaceCount++;
+                    } else if(bspaceCount != 0 && tagsLen) {// delete tag on next backspace
+                        currObject.removeTag();
+                        bspaceCount--;
+                    } 
+                } else {
+                    bspaceCount = 0;// resets the bkspace count to handle case where user hits backspace once and without deleting the tag continues typing.
+                    if(tagArr.length == 0)leftKeyCount = 0;//reset leftKeyCount;
+                }
+                if(ipVal.length==0 && kCd == 39){//right arrow
+                    if(currIndex>=0 &&currIndex<tagArr.length-1){
+                        $n(".tagList").eq(currIndex+1).addClass('readyToRemove');
+                    }
+                    $n(".tagList").eq(currIndex).removeClass('readyToRemove');
+                    currIndex = currIndex+1;
+                    index = currIndex-1;
+                }
+                if(ipVal==0 && kCd == 37){//left arrow
+                    var currSelTag = $n(".readyToRemove").first().html();
+                    if(currSelTag) var currIdx = tagArr.indexOf(currSelTag.toString().toLowerCase());
+                    if(leftKeyCount == 0){
+                        if(currIdx !=-1){//handle case where user hits left arrow aftr backspace
+                            $n(".tagList").eq(currIdx).removeClass('readyToRemove');
+                            $n(".tagList").eq(currIdx-1).addClass('readyToRemove');
+                            index = $n(".tagList").length-3;
+                            currIndex = currIdx-1;
+                        } else {
+                            $n(".tagList:last").addClass('readyToRemove');
+                            index = $n(".tagList").length-2;
+                        }
+                        leftKeyCount++;
+                    } else {
+                        if(index>=0 && index<tagArr.length){
+                            $n(".tagList").eq(index+1).removeClass('readyToRemove');
+                            $n(".tagList").eq(index).addClass('readyToRemove');
+                            currIndex = index;
+                            index = index - 1;
+                        } else {//continue to move in a loop
+                            $n(".tagList").eq(0).removeClass('readyToRemove');
+                            $n(".tagList:last").addClass('readyToRemove');
+                            index = $n(".tagList").length-2;
+                            currIndex = index+1;
+                            leftKeyCount = 1;
+                        }
+                    }
+                }
+        }
+	$n("#"+tagInputId).currObj().onblur = function(evt){
+		if (!evt) evt = window.event;
+			if($n("#"+tagInputId).val() != ""){
+				currObject.shouldCreateTag(evt,tagInputId,InputLi);
+			}
+			if($n("#"+tagInputId).val()=="" && tagArr.length == 0){
+				console.log("dd");
+				$n("#"+hlpTxtId).show();
+				currObject.hide();
+			} 
+			if(tagArr.length == 0)
+				$n("#" + removeAllId).parent().hide();
+	}
+	
+	//Remove All
+	if(removeAllId){
+		$n("#"+removeAllId).addEvent('click',function(evt){
+			clearAll();
+			var tagsLen = $n(".tagList").length;
+			for(var i=0;i<tagsLen;i++){
+	                        $n(".tagList").eq(i).remove();
+                        }
+                    	tagArr = [];//empty array once all tags are deleted.
+                    	$n("#"+hiddenId).val("");
+			$n(this).parent().hide();
+			$n("#"+tagInpId).setFocus();
+			$n("#"+tagInpId).val("");
+		})
+	}	
+    }
+    currObject.shouldCreateTag = function(evt,tagInputId,InputLi) {
+        var inputValue = $n.trim($n("#"+tagInputId).val());
+        inputValue = inputValue.toString();
+        var ifSplChar = currObject.validateSplChar(evt,inputValue,isMandatory);
+        var checkDup,isCtrlAll = $n(".remAll").length;
+        if(ifSplChar == false){
+            currObject.addRemoveErr(tagInputId,"add");
+            //setTimeout(function(){$n("#"+tagInputId).val(inputValue.replace('/amp;/g',''))},80);
+        } else if(ifSplChar == true) {
+            var retVal = currObject.validateComma(inputValue);
+            if(retVal == true){
+                inputValueArr = inputValue.split(',');
+                for(var i=0;i<inputValueArr.length;i++){
+                    inputValueArr[i] = $n.trim(inputValueArr[i]);        
+                    checkDup = currObject.validateDupTag(inputValueArr[i],"array",i);
+                    if(checkDup == true){
+                        currObject.addRemoveErr(tagInputId,"remove");
+                        currObject.createTag(evt,inputValueArr[i],tagInputId,InputLi);
+                        currObject.validateOK(inputValueArr[i]);
+                        if(isCtrlAll!=0) currObject.resetIndex(isCtrlAll);
+                        currObject.resetIndex(null);
+                    } else {
+                        $n("#"+tagInputId).val("");// if all the comma seperated val are already present than clear the inp.
+                    }
+                }
+            } else {
+                checkDup = currObject.validateDupTag(inputValue);
+                if(checkDup == true){
+                    currObject.addRemoveErr(tagInputId,"remove");
+                    currObject.createTag(evt,null,tagInputId,InputLi);
+                    currObject.validateOK(inputValue);
+                    if(isCtrlAll!=0) currObject.resetIndex(isCtrlAll);
+                    currObject.resetIndex(null);
+                } else {
+                    currObject.addRemoveErr(tagInputId,"add");
+                }
+            }
+        }
+    }
+    currObject.validateSplChar = function(evt,inputValue,isMandatory){
+        var regEx = /[;$^?*()|\\@'<>%!="{}\[\]~`:]/; //invalid characters
+            inputValue = inputValue.toString();
+        if((!isMandatory || evt.keyCode == 13) && inputValue.length == 0){//handle case where user hits tab without entering any text.
+            return;
+        }
+        if(inputValue.length == 0 || regEx.test(inputValue) == true){
+            return false;
+        }
+        return true;
+    }
+    currObject.validateComma = function(inputValue){
+        var inpContainsComma = inputValue.match(',');
+        if(inpContainsComma!= null && inpContainsComma.length != 0){
+            return true;
+        } else {
+            return false;
+        }
+    }
+    currObject.validateDupTag = function(inputValue,inpType,index){
+        if(tagArr.length !=0){
+            for(var j=0;j<tagArr.length;j++){
+                if(inputValue.toLowerCase() == $n.trim(tagArr[j].toLowerCase())){// check to restrict duplicate tag values
+                    if(inpType == "array"){//if comma seperated val
+                        return;
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    currObject.validateOK = function(inputValue){
+        if(inputValue !=""){
+            tagArr.push(" "+inputValue.replace(/\s+/g,' '));// if valid then insert tag value to an array.
+	  
+        }
+        $n("#"+hiddenId).val(tagArr.toString().replace(/\s+/g,' '));// insert tag val to hidden input as comma seperated values.
+		if(tagArr.length == 1){
+			$n("#" + removeAllId).parent().show()
+		}
+    }
+    currObject.createTag = function(evt,inpVal,tagInputId,InputLi){
+        var tagLi = $n("<li>");
+        var tagLabel = $n("<span>");
+        var removeAnchor = $n("<a>");
+        var removeSpan = $n("<span>");
+        var tagInputVal;
+        if(inpVal == "")return;
+        (inpVal)?tagInputVal = inpVal:tagInputVal = $n("#"+tagInputId).val();
+        tagLi.addClass("tagList");
+        removeAnchor.addClass("tagit-close");
+        removeSpan.addClass("close-icon");
+	tagLabel.addClass("tagit-label").attr('title', tagInputVal.replace(/\s+/g,' '));        
+	tagLabel.html(tagInputVal.replace(/&/g,'&amp;').replace(/\s/g,' '));
+        removeSpan.html("×");
+        removeAnchor.append(removeSpan);
+        tagLi.append(tagLabel);
+        tagLi.append(removeAnchor);
+        $n("#"+currObject.attr('id')).currObj().insertBefore(tagLi.currObj(),InputLi.currObj());
+        $n("#"+tagInputId).val("");
+        removeAnchor.addEvent("click",function(evt){
+                currObject.removeTag(evt,null);
+                $n("#"+tagInpId).setFocus();
+                })
+    }
+    currObject.removeTag = function(evt,tagToRemove){
+        var currTagValue,targ;
+        if(evt) {
+            (evt.target)? targ= $n(evt.target):targ = $n(evt.srcElement);
+            currTagValue = targ.parent().parent().childrens().eq(0).html();
+            targ.parent().parent().remove(); //delete by clicking "remove" icon
+            currObject.resetIndex();
+            if(tagArr.length < 250)
+            { document.getElementById('kwdlimit').style.display="none" }
+            else{
+                document.getElementById('kwdlimit').style.display="block"
+            }
+        } else if(tagToRemove>=0 && tagToRemove<tagArr.length-1 ){//removing thru navigation
+            currTagValue = $n(".tagit-label").eq(tagToRemove).html();
+            if(tagToRemove == 0){//if deleting the last tag, select the next tag after deletion
+                $n(".tagList").eq(tagToRemove).remove();
+                $n(".tagList").eq(0).addClass('readyToRemove');
+            } else {
+                $n(".tagList").eq(tagToRemove).remove();
+                $n(".tagList").eq(tagToRemove-1).addClass('readyToRemove');
+                index = tagToRemove-2;
+                currIndex = tagToRemove-1;
+            }
+        } else {
+            currTagValue =$n.trim($n(".tagit-label:last").html());
+            $n(".tagList:last").remove(); //delete by backspace
+        }
+        for(var k=0;k<tagArr.length;k++){// delete the removed tag's entry form the array
+            currTagValue = currTagValue.replace(/\&amp;/g,'&');
+            tagArr[k] =  tagArr[k].replace(/\&amp;/g,'&');
+            if($n.trim(currTagValue.toLowerCase()) == $n.trim(tagArr[k].toLowerCase())){
+                tagArr.splice(k,1);
+            }
+        }
+        $n("#"+hiddenId).val(tagArr.toString());
+    }
+    currObject.addRemoveErr = function(tagInputId,errStatus){
+        if(errStatus == "add"){
+            $n("#"+tagContId).addClass('errfldd');
+            $n("#"+tagInputId).addClass('errfldd');
+            //$n(".errLabel").show();
+            $n(".errLabel").currObj().style.display='block';
+        } else{
+            $n("#"+tagInputId).removeClass('errfldd');
+            $n("#"+tagContId). removeClass('errfldd');
+            $n(".errLabel").hide();
+        }
+    }
+    currObject.resetIndex = function(arg){
+        if(arg){
+            for(var i=0;i<arg;i++){
+                $n(".remAll").eq(i).removeClass("remAll");
+            }
+            rmvAll = false;
+        } else{
+            var currSelTag = $n(".readyToRemove").first().html();
+            if(currSelTag) var currIdx = tagArr.indexOf(currSelTag.toString().toLowerCase());
+            if(currIdx!=-1) $n(".tagList").eq(currIdx).removeClass('readyToRemove');
+        }
+        index = tagArr.length-1;//reset index once tag is created
+        currIndex = tagArr.length+1;//reset index once tag is created
+    }
+    $n("#"+hlpTxtId).addEvent('focus',function(evt){
+            $n("#"+hlpTxtId).hide();
+            currObject.show();
+            $n("#"+tagInpId).setFocus();
+            })
+    $n("#"+hlpTxtId).addEvent('click',function(evt){
+            $n("#"+hlpTxtId).hide();
+            currObject.show();
+            $n("#"+tagInpId).setFocus();
+            })
+    currObject.parent().click(function(evt){
+		if(tagArr.length!=0){
+			$n("#"+tagInpId).setFocus();
+		}
+    })
+    currObject.init(); 
+}

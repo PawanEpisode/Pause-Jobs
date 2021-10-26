@@ -1,0 +1,464 @@
+/* my script */
+
+/*
+function addMediaElement(label,parentObj)
+{
+  var childContainer = document.getElementById(label+'disp');
+  newSpan = document.createElement('span');
+  newSpan.setAttribute('id',label+"-"+parentObj.id);
+  newSpan.innerHTML = "<b> "+parentObj.id+" </b>";
+  var newAnchor = document.createElement('a');
+  id1=label+"-"+parentObj.id;
+  newAnchor.href="javascript:removeChild('"+id1+"'), displaySpec(document.getElementById('"+label+"'),'"+label+"');";
+  newAnchor.innerHTML="<img src='"+imgPath+"/cross_small.gif' alt='' width='9' height='9' border='0' hspace='4' />";
+  newSpan.appendChild(newAnchor);
+  childContainer.appendChild(newSpan);
+  document.getElementById(label+'Container').style.display="block";
+}
+*/
+
+function removeEmpty()
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  if(trim(doc.getElementById('phdisp').innerHTML)=='')
+  {
+    doc.getElementById('phContainer').style.display='none';
+  }
+  if(trim(doc.getElementById('pptdisp').innerHTML)=='')
+  {
+        doc.getElementById('pptContainer').style.display='none';
+  }
+}
+function mediaRemoveAll(type)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  doc.getElementById(type+'disp').innerHTML='';
+  doc.getElementById(type+'Container').style.display='none';
+  doc.getElementById(type+'str').value = '';
+  if (type == 'ph')
+  {
+    doc.getElementById('addPhotosLink').innerHTML = 'Add Photo(s)';
+  }
+  displaySpec(doc.getElementById(type),type,'false');
+}                                    
+
+function mediaRemoveCheck(type)
+{
+  if(trim(document.getElementById(type+'disp').innerHTML)=='') 
+  {
+    document.getElementById(type+'str').value = '';
+    mediaRemoveAll(type);
+  }
+}
+
+function unchecAllkWinPhoto (label)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+
+  var arrBigImg = doc.getElementById(label+'BigMedia').getElementsByTagName('img');
+  for(var j=0; j < arrBigImg.length; j++)
+  {
+    if (doc.getElementById(label+'chkb'+(j+1)))
+      doc.getElementById(label+'chkb'+(j+1)).checked = false;
+    if (doc.getElementById(label+'rdo'+(j+1)))
+      doc.getElementById(label+'rdo'+(j+1)).checked = false;
+  }
+  if (label == 'ppt')
+  {
+    doc.getElementById(label+'str').value = '';
+  }
+}
+
+function countMediaSelected(lbl)
+{
+  var arrBigImg = document.getElementById(lbl+'disp').getElementsByTagName('img');
+  return arrBigImg.length;
+}
+
+function validateSelectedMedia(lbl)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  var arrBigImg = doc.getElementById(lbl+'BigMedia').getElementsByTagName('img');
+  var arrImg = doc.getElementById(lbl+'disp').getElementsByTagName('img');
+  var rdoCheck = false;
+  var checkExist = false;
+  for(var i=0; i < arrBigImg.length; i++)
+  {
+    if(doc.getElementById(lbl+'chkb'+(i+1)).checked)
+    {
+      checkExist = true;
+      if(lbl == 'ph')
+      {
+        if (!rdoCheck && lbl == 'ph' && doc.getElementById(lbl+'rdo'+(i+1)).checked)
+        {
+          rdoCheck = true;
+          break;
+        }
+      }
+      else
+        break;
+    }
+  }
+  if (checkExist == true)
+  {
+    if(lbl == 'ph' && rdoCheck == false)
+    {
+        doc.getElementById('phError').innerHTML='Please select at least one photo as default.';    
+        doc.getElementById('phError').style.display = 'block';
+        return false;
+    }
+    if (lbl == 'ph')
+    {
+      for (var i = 0,numChk = 0; i < arrBigImg.length; i++)
+      {
+        if(doc.getElementById(lbl+'chkb'+(i+1)).checked)
+        {
+          numChk++;
+        }
+      }
+      if (numChk > 10)
+      {
+        doc.getElementById('phError').innerHTML='You can select at max 10 photo(s) only.';
+        doc.getElementById('phError').style.display = 'block';
+        return false;
+      }
+    }
+  }
+  else
+  {
+    if(lbl == 'ph')
+    {
+      doc.getElementById('phError').innerHTML='Please select at least one photo.';
+      doc.getElementById('phError').style.display = 'block';
+      return false;
+    }
+    else if(lbl == 'ppt')
+    {
+      doc.getElementById('pptError').innerHTML='Please select at least one presentation.';
+      doc.getElementById('pptError').style.display = 'block';
+      return false;
+    }
+  }
+  return true;
+}
+
+function chkBoxState(lbl)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  var arrBigImg = doc.getElementById(lbl+'BigMedia').getElementsByTagName('img');
+  var arrImg = doc.getElementById(lbl+'disp').getElementsByTagName('img');
+  var strMediaIds = "";
+  var rdoCheck = false;
+  var hide = validateSelectedMedia(lbl);
+  if(hide)
+  {
+    if(arrImg.length)
+    {  
+      mediaRemoveAll(lbl);
+    }
+    for(var i=0; i < arrBigImg.length; i++)
+    { 
+      if(doc.getElementById(lbl+'chkb'+(i+1)).checked)
+      {
+        if(lbl == 'ph')
+        {
+          if (!rdoCheck && lbl == 'ph' && doc.getElementById(lbl+'rdo'+(i+1)).checked)
+          {
+            strMediaIds = strMediaIds + arrBigImg[i].id + ",";
+            createMediaContainer(lbl,arrBigImg[i],0);
+            i = -1;
+            rdoCheck = true;
+            continue;
+          }
+          else
+          {
+            if (rdoCheck && !doc.getElementById(lbl+'rdo'+(i+1)).checked)
+            {
+              strMediaIds = strMediaIds + arrBigImg[i].id + ",";
+              createMediaContainer(lbl,arrBigImg[i],1);
+            }
+          }
+        }
+        else
+        {
+          strMediaIds = strMediaIds + arrBigImg[i].id + ",";
+          createMediaContainer(lbl,arrBigImg[i],1);
+        }
+      }
+    }
+    if (strMediaIds.length)
+    {
+      strMediaIds = strMediaIds.substring(0,strMediaIds.lastIndexOf(','));
+    }
+    doc.getElementById(lbl+'str').value=strMediaIds;
+    hidemodal();
+  }
+}
+
+function removeAndOpenMediaLayer(label,id)
+{
+  if(countMediaSelected(label)>1)
+  {
+    uncheckWinPhoto(label,id);
+    displaySpec(document.getElementById(label),label);
+    modalwin('812','500','addPhotos',gbi('addPhotosLink'));
+  }
+  else
+  {
+    mediaRemoveAll(label);
+  }
+}
+
+function createMediaContainer(label, objImage, removeFlag)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  var childContainer = doc.getElementById(label+'disp');
+  newSpan = doc.createElement('span');
+  newSpan.setAttribute('id',label+"-"+objImage.id);
+  newSpan.setAttribute('class','flLeft');
+  if(removeFlag == 0)
+    newSpan.innerHTML = ""+objImage.name+"<span class='new'>Default</span>";
+  else
+    newSpan.innerHTML = ""+objImage.name+"";
+  var newAnchor = doc.createElement('a');
+  id1=label+"-"+objImage.id;
+  if(label == 'ph')
+  {
+    if(removeFlag == 0)
+    {
+//      newAnchor.href="javascript:uncheckWinPhoto('"+label+"','"+id1+"'), displaySpec(document.getElementById('"+label+"'),'"+label+"'),modalwin('812','500','addPhotos',gbi('addPhotosLink'));";
+        newAnchor.href="javascript:removeAndOpenMediaLayer('"+label+"','"+id1+"');";
+    }
+    else
+    {
+      newAnchor.href="javascript:removePhotoId('"+id1+"'),removeChild('"+id1+"'), displaySpec(document.getElementById('"+label+"'),'"+label+"');";
+    }
+    if (doc.getElementById('addPhotosLink') && doc.getElementById('addPhotosLink').innerHTML == 'Add Photo(s)')
+    {
+      doc.getElementById('addPhotosLink').innerHTML = 'Add more Photo(s)';
+    }
+  }
+  else
+  {
+   newAnchor.href="javascript:unchecAllkWinPhoto('"+label+"'),removeChild('"+id1+"'), displaySpec(document.getElementById('"+label+"'),'"+label+"');";
+  }
+  newAnchor.innerHTML="<img src='"+imgPath+"/cross_small.gif' alt='' width='9' height='9' border='0' hspace='4' id = sc-"+objImage.id+" />";
+  newSpan.appendChild(newAnchor);
+  childContainer.appendChild(newSpan);
+  doc.getElementById(label+'Container').style.display = 'block';
+}
+function removePhotoId (phId)
+{
+  removedId = phId.split("-")[1];
+  phstrIds = document.getElementById('phstr').value;
+  arrStr = phstrIds.split(removedId);
+  tmp = arrStr[0];
+  if (arrStr[1])
+  {
+    phstrIds = tmp.substr(0,tmp.length - 1) + arrStr[1];
+  }
+  else
+  {
+    phstrIds = tmp.substr(0,tmp.length - 1);
+  }
+  document.getElementById('phstr').value = phstrIds;
+}
+function uncheckWinPhoto (label, objId)
+{
+  selectWinPhoto(label);
+  var arrBigImg = document.getElementById(label+'BigMedia').getElementsByTagName('img');
+  for(var j=0; j < arrBigImg.length; j++)
+  {
+    if(arrBigImg[j].id == objId.split("-")[1])
+    {
+      document.getElementById(label+'chkb'+(j+1)).checked = false;
+      if (label == 'ph'){
+        document.getElementById(label+'rdo'+(j+1)).checked = false;
+        document.getElementById(label+'rdo'+(j+1)).disabled = true;
+        break;
+     }    
+    }
+  }
+}
+function attachPhotoLen(label)
+{
+  var arrImg = document.getElementById(label+'disp').getElementsByTagName('img');
+  return arrImg.length;
+}
+function selectWinPhoto(label)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  var arrImg = doc.getElementById(label+'disp').getElementsByTagName('img');
+  var arrBigImg = doc.getElementById(label+'BigMedia').getElementsByTagName('img');
+  var first = true;
+  for(var i=0; i < arrImg.length; i++)
+  {
+    for(var j=0; j < arrBigImg.length; j++)
+    {
+      if((arrImg[i].id).split("-")[1] == doc.getElementById(label+'chkb'+(j+1)).value)
+      {  
+        if(label == 'ph' && first == true)
+        {
+          doc.getElementById(label+'rdo'+(j+1)).checked = true;
+          doc.getElementById(label+'rdo'+(j+1)).disabled = false;
+          first = false;
+        }
+        doc.getElementById(label+'chkb'+(j+1)).checked = true;break;
+      }
+    }
+  }
+  for (var j=0; j < arrBigImg.length; j++)
+  {
+    if(label == 'ph')
+    {
+      if(doc.getElementById(label+'chkb'+(j+1)).checked == false)
+      {
+        doc.getElementById(label+'rdo'+(j+1)).checked = false;
+        doc.getElementById(label+'rdo'+(j+1)).disabled = true;
+      }
+    }
+  }
+  if (label == 'ph')
+    doc.getElementById('phError').style.display = 'none';
+  else
+    doc.getElementById('pptError').style.display = 'none';
+}
+
+function showMediaOnEditJob(label, mediaID)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  var mediaArr = mediaID.split(',');
+
+  for(var j=0; j < mediaArr.length; j++)
+  {
+    if (j == 0 && label == 'ph')
+      createMediaContainer(label, doc.getElementById(mediaArr[j]),0);
+    else
+      createMediaContainer(label, doc.getElementById(mediaArr[j]),1);
+  }  
+}
+
+function enableRadio(id)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+  doc.getElementById('phrdo'+id).disabled = !doc.getElementById('phrdo'+id).disabled;
+  if (!doc.getElementById('phchkb'+id).checked)
+    doc.getElementById('phrdo'+id).checked = false;
+}
+function openAddPhotoLB (label, obj, src)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+
+  if (doc.getElementById('uploadedPic').value == '1') {
+  src = '1';
+  }
+  if (src == '1') {
+  selectWinPhoto('ph');
+  modalwin('812','500','addPhotos', obj);
+  }
+  else {
+  modalwin('367','300','AddPhotoStep2', gbi('addPhotosLink'));
+  }
+}
+
+function openAddPPTLB (label, obj, src)
+{
+  if(parentDocument)
+    doc = parent.document;
+  else
+    doc = document;
+
+  if (doc.getElementById('uploadedPresentation').value == '1') {
+  src = '1';
+  }
+  if (src == '1') {
+  selectWinPhoto('ppt');
+  modalwin('520','300','addPresentationMain', obj);
+  }
+  else {
+  modalwin('367','300','AddPPTStep2', gbi('addPresentationlink'));
+  }
+}
+
+function checkUploadLimit(label, isSuper)
+{
+/*
+  if (label == 'ph')
+  {
+    if(document.getElementById('selPhotos'))
+    {
+      var arrPhDiv = document.getElementById('selPhotos').getElementsByTagName('div');
+      var phLen = arrPhDiv.length;
+      if (phLen >= 20) 
+      {        
+        document.getElementById('phUploadError').innerHTML = 'You cannot upload any more photos. Please';
+        if (isSuper != 1)
+        {
+          document.getElementById('phUploadError').innerHTML += ' contact your super-user to'
+        }
+        document.getElementById('phUploadError').innerHTML += ' delete one of the existing photos first.';
+        document.getElementById('phUploadError').style.display = 'block';
+        document.getElementById('phUploadIframe').style.display = 'none';
+        return;
+      }
+    }
+    document.getElementById('phUploadError').innerHTML = '';
+    document.getElementById('phUploadError').style.display = 'none';
+    document.getElementById('phUploadIframe').style.display = 'block';
+  }
+
+  if (label == 'ppt')
+  {
+    if(document.getElementById('pptBigMedia'))
+    {
+      var arrPPTDiv = document.getElementById('pptBigMedia').getElementsByTagName('div');
+      var pptLen = arrPPTDiv.length;
+      if (pptLen >= 3) 
+      {
+        document.getElementById('pptUploadError').innerHTML = '';
+        if (isSuper != 1)
+        {
+          document.getElementById('pptUploadError').innerHTML += ' contact your super-user to'
+        }
+        document.getElementById('pptUploadError').innerHTML += ' delete one of your existing presentation first.';
+        document.getElementById('pptUploadError').style.display = 'block';
+        document.getElementById('pptUploadIframe').style.display = 'none';
+        return;
+      }
+    }
+    document.getElementById('pptUploadError').innerHTML = '';
+    document.getElementById('pptUploadError').style.display = 'none';
+    document.getElementById('pptUploadIframe').style.display = 'block';
+  }
+  */
+}
