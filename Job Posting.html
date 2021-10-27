@@ -12134,6 +12134,7 @@
                           href="http://www.naukri.com/job-listings-Referral-Job-SuhaniRishabh-Inc--Bellary-Agra-30-to-31-years-251021009940"
                           class="f13"
                           target="_blank"
+                          title="Referral Job"
                         >
                           Referral Job
                         </a>
@@ -12145,11 +12146,29 @@
                             align-items: center;
                           "
                           >Under Review
-                          <a
+                          <!-- <td width="5"></td>
+                          <div class="tooltip"><svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              clip-rule="evenodd"
+                              d="M2 12C2 6.48 6.48 2 12 2C17.52 2 22 6.48 22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12ZM13 11V17H11V11H13ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM13 7V9H11V7H13Z"
+                              fill="black"
+                              fill-opacity="0.54"
+                            />
+                          </svg>
+                            <span class="tooltiptext">Your job is under review due to some suspicious activity.Job will go live in 1 business day If it passes manual verification.</span>
+                          </div> -->
+                          <a 
                             href="javascript:void(0)"
-                            onmouseout="hidetip()"
-                            style="margin-left: 2px"
-                            onmouseover="tooltip('Your job is under review due to some suspicious activity.Job will go live in 1 business day If it passes manual verification.',this,'0');"
+                            style='margin-left: 2px;'
+                            onmouseout="hidetip(); document.getElementById('hintbox').style.transform='' "
+                            onmouseover="tooltip('Your job is under review due to some suspicious activity.Job will go live in 1 business day If it passes manual verification.',this,'0'); document.getElementById('hintbox').style.transform='translateY(-40px)' "
                           >
                             <svg
                               width="12"
